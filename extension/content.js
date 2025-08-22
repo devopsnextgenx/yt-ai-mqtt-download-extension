@@ -3,6 +3,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     try {
       // Extract comprehensive YouTube video information
       const title = document.title.replace(' - YouTube', '');
+      // Add resolution extraction code
       const description = document.querySelector('meta[name="description"]')?.content || '';
       const keywordsMeta = document.querySelector('meta[name="keywords"]')?.content || '';
       
@@ -26,8 +27,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       let videoQualityInfo = '';
       
       // Get video element dimensions if available
+      let maxResolution = '';
       if (videoElement) {
         videoQualityInfo = `Video dimensions: ${videoElement.videoWidth}x${videoElement.videoHeight}`;
+        maxResolution = `${videoElement.videoHeight}`;
       }
       
       // Try to get quality settings from YouTube player
@@ -59,14 +62,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const videoData = {
         title: title,
         description: description.substring(0, 500) + (description.length > 500 ? '...' : ''), // Increased description length for better AI analysis
-        url: window.location.href,
+        url: window.location.href.split('&')[0],
         channelName: channelName,
         duration: duration,
         viewCount: viewCount,
         uploadDate: uploadDate,
         contentType: contentType,
+        maxResolution: maxResolution, // Add the max resolution to the response
         videoQualityInfo: videoQualityInfo,
-        extractedAt: new Date().toISOString()
+        extractedAt: new Date().toISOString(),
       };
 
       if (videoData.contentType === "Other") {

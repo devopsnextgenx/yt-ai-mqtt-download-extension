@@ -1,9 +1,25 @@
+function switchTab(tabId) {
+  // Update tab buttons
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+
+  // Update tab panes
+  document.querySelectorAll('.tab-pane').forEach(pane => {
+    pane.classList.remove('active');
+  });
+  document.getElementById(`${tabId}Tab`).classList.add('active');
+}
+
 document.getElementById('sendButton').addEventListener('click', async () => {
   const statusDiv = document.getElementById('status');
   const extractedDataDiv = document.getElementById('extractedData');
   const mqttStatusBox = document.getElementById('mqttStatus');
   const finalJsonBox = document.getElementById('finalJsonBox');
-  
+  // Switch to extracted data tab
+  switchTab('extracted');
+
   // Helper function to add timestamped messages to MQTT status box
   const addMqttStatus = (message, type = 'info') => {
     const timestamp = new Date().toLocaleTimeString();
@@ -68,12 +84,17 @@ document.getElementById('sendButton').addEventListener('click', async () => {
         // Send the data to the background script for Ollama processing and MQTT sending
         addMqttStatus('🤖 Sending data to Ollama AI for structured JSON processing...');
         console.log("🤖 [POPUP] Sending video data to background for Ollama processing:", response.data);
+        const overrideActor = document.getElementById('actorInput').value;
+        // Add the model info to the message
         chrome.runtime.sendMessage({
           action: "sendMqttMessage",
-          data: response.data
+          data: {...response.data, overrideActor}
         }, (res) => {
           console.log("📡 [POPUP] Background script response:", res);
           if (res && res.status === "success") {
+            // Switch to final JSON tab when showing the result
+            switchTab('final');
+            
             statusDiv.textContent = 'Structured JSON sent via MQTT!';
             addMqttStatus('✅ Structured JSON (LNG, ACT, MP4URL, RES) sent successfully via MQTT', 'success');
             console.log("✅ [POPUP] Complete pipeline successful: YouTube → Ollama → MQTT");
@@ -98,7 +119,13 @@ document.getElementById('sendButton').addEventListener('click', async () => {
               addMqttStatus(`Sent at: ${new Date(res.details.timestamp).toLocaleString()}`);
               addMqttStatus('✨ Structured JSON sent: {LNG, ACT, MP4URL, RES}', 'success');
             }
+            // After displaying all success messages, switch back to status tab
+            setTimeout(() => {
+              switchTab('status');
+            }, 5000);
           } else {
+            // On error, stay on status tab
+            switchTab('status');
             console.error("❌ [POPUP] Background script error:", res);
             const errorMsg = res ? res.message : 'Unknown error occurred';
             statusDiv.textContent = `Error: ${errorMsg}`;
@@ -138,16 +165,10 @@ document.getElementById('sendButton').addEventListener('click', async () => {
 document.getElementById('clearStatusButton').addEventListener('click', () => {
   const mqttStatusBox = document.getElementById('mqttStatus');
   mqttStatusBox.value = '';
-  
+  switchTab('status');
   // Add a cleared message with timestamp
   const timestamp = new Date().toLocaleTimeString();
   mqttStatusBox.value = `[${timestamp}] 🗑️ CLEARED: Status log cleared by user\n`;
-});
-
-// Add event listener for clear JSON button
-document.getElementById('clearJsonButton').addEventListener('click', () => {
-  const finalJsonBox = document.getElementById('finalJsonBox');
-  finalJsonBox.value = '';
 });
 
 // Initialize status box with configuration info
@@ -156,11 +177,32 @@ document.addEventListener('DOMContentLoaded', () => {
   const finalJsonBox = document.getElementById('finalJsonBox');
   const timestamp = new Date().toLocaleTimeString();
   
+  // Initialize tabs
+  document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', () => {
+      switchTab(button.dataset.tab);
+    });
+  });
+
+  // Focus status tab by default
+  switchTab('status');
+
+  // Add new model selection input
+  const modelInputHtml = `
+    <div style="margin-bottom: 10px;">
+      <label for="ollamaModel">Ollama Model:</label>
+      <input type="text" id="ollamaModel" value="qwen3:latest" style="width: 200px; margin-left: 5px;">
+    </div>
+  `;
+
+  // Insert the model input before the first button
+  document.querySelector('#sendButton').insertAdjacentHTML('beforebegin', modelInputHtml);
+  
   // Initialize status box
   mqttStatusBox.value = `[${timestamp}] ℹ️ INFO: Extension loaded - Ready to extract structured JSON {LNG, ACT, MP4URL, RES}\n`;
   
   // Initialize final JSON box with placeholder text
-  finalJsonBox.placeholder = "The final JSON message sent to MQTT will appear here...\n\nFormat: {\n  \"LNG\": \"en\",\n  \"ACT\": \"Actor Name\",\n  \"MP4URL\": \"video_url\",\n  \"RES\": 1080\n}";
+  finalJsonBox.placeholder = "{\n  \"LNG\": \"English\",\n  \"ACT\": \"Actor Name\",\n  \"MP4URL\": \"video_url\",\n  \"RES\": 1080\n}";
   
   // Fetch broker and Ollama configuration from background script
   chrome.runtime.sendMessage({ action: "getBrokerInfo" }, (response) => {
@@ -168,6 +210,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const brokerInfo = response.brokerInfo;
       const ollamaInfo = response.ollamaInfo;
       
+      // Update model input with current value if it exists
+      if (ollamaInfo?.model) {
+        document.getElementById('ollamaModel').value = ollamaInfo.model;
+      }
+
       mqttStatusBox.value += `[${timestamp}] ℹ️ INFO: MQTT Broker: ${brokerInfo.host}:${brokerInfo.port}\n`;
       mqttStatusBox.value += `[${timestamp}] ℹ️ INFO: MQTT Topic: "${brokerInfo.topic}"\n`;
       mqttStatusBox.value += `[${timestamp}] 🤖 INFO: AI Model: ${ollamaInfo.model} at ${ollamaInfo.host}\n`;

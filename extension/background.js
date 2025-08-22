@@ -192,7 +192,9 @@ Video Data:
 Title: ${videoData.title}
 Description: ${videoData.description}
 Channel: ${videoData.channelName}
+Resolution: ${videoData.maxResolution}
 URL: ${videoData.url}
+Actor Override: ${videoData.overrideActor || 'None'}
 
 Please extract the following information and return ONLY a valid JSON object with these exact keys:
 - LNG: Primary language of the video/movie/song (like "English", "South", "Hindi", "Marathi", "Bhojpuri", etc.)
@@ -396,6 +398,7 @@ Example format:
     console.log("📋 [FALLBACK] Original video data for reference:");
     console.log("  📺 Title:", videoData.title);
     console.log("  📺 Channel:", videoData.channelName);
+    console.log("  📺 Resolution:", videoData.maxResolution);
     console.log("  📺 URL:", videoData.url);
     console.log("💡 [TROUBLESHOOT] To fix Ollama issues:");
     console.log("  1. Ensure Ollama is running: 'ollama serve'");
@@ -421,7 +424,7 @@ const useWebSocket = true; // Force WebSocket connection for browser compatibili
 
 // === OLLAMA CONFIGURATION ===
 const ollamaHost = 'http://localhost:11434'; // Ollama API endpoint
-const ollamaModel = 'llama3.1:latest'; // Default Ollama model (change as needed)
+const ollamaModel = 'qwen3:latest'; // Default Ollama model (change as needed)
 // =====================
 
 // Event listener for messages from other parts of the extension (e.g., popup.js)
