@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>YouTube MQTT Sender</title>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      width: 380px;
+      padding: 15px;
+      background-color: #f0f2f5;
+      color: #333;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: center;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      color: #1e40af;
+    }
+    button {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    button:hover {
+      background-color: #2563eb;
+      transform: translateY(-2px);
+    }
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .clear-button {
+      background-color: #6b7280;
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      margin-top: 5px;
+    }
+    .clear-button:hover {
+      background-color: #4b5563;
+    }
+    .clear-button.json-clear {
+      background-color: #10b981;
+    }
+    .clear-button.json-clear:hover {
+      background-color: #059669;
+    }
+    .extracted-data {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 0.85rem;
+      text-align: left;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      max-height: 120px;
+      overflow-y: auto;
+      display: none;
+    }
+    .extracted-data.show {
+      display: block;
+    }
+    .status-message {
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 500;
+      margin-top: 10px;
+      background-color: #e0e7ff;
+      color: #1e40af;
+      text-align: left;
+    }
+    .mqtt-status-box {
+      width: 100%;
+      height: 120px;
+      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      background-color: #f8fafc;
+      color: #333;
+      resize: none;
+      overflow-y: auto;
+      margin-top: 10px;
+      box-sizing: border-box;
+    }
+    .mqtt-status-box:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    .final-json-box {
+      width: 100%;
+      height: 100px;
+      padding: 10px;
+      border: 1px solid #10b981;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      background-color: #f0fdf4;
+      color: #059669;
+      resize: none;
+      overflow-y: auto;
+      margin-top: 10px;
+      box-sizing: border-box;
+      font-weight: 500;
+    }
+    .final-json-box:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+    }
+    .note {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 15px;
+    }
+  </style>
+  <script src="popup.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Send Video Info via MQTT</h2>
+    <div id="extractedData" class="extracted-data"></div>
+    <button id="sendButton">Get & Send</button>
+    <div id="status" class="status-message">Ready.</div>
+    <textarea id="mqttStatus" class="mqtt-status-box" placeholder="MQTT status and messages will appear here..." readonly></textarea>
+    <button id="clearStatusButton" class="clear-button">Clear Status</button>
+    <div style="margin-top: 15px;">
+      <label for="finalJsonBox" style="font-size: 0.9rem; font-weight: 600; color: #059669; display: block; margin-bottom: 5px;">📊 Final Published JSON Message:</label>
+      <textarea id="finalJsonBox" class="final-json-box" placeholder="The final JSON message sent to MQTT will appear here..." readonly></textarea>
+      <button id="clearJsonButton" class="clear-button json-clear">Clear JSON</button>
+    </div>
+    <div class="note">
+      This extension will try to get the movie/actor data from the current YouTube page and publish it to an MQTT topic.
+    </div>
+  </div>
+</body>
+</html>
