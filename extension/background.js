@@ -180,25 +180,33 @@ async function testOllamaModel() {
 }
 
 async function processVideoDataWithOllama(videoData) {
+  const {extract, config} = videoData;
+  console.log("⚙️ [DEBUG] Using Ollama config:", { ollamaHostPort, ollamaModelx });
   console.log("🤖 [DEBUG] Starting Ollama processing for video data...");
   console.log("📋 [DEBUG] Ollama configuration:", { host: ollamaHostPort, model: ollamaModelx });
   console.log("📊 [DEBUG] Input video data:", JSON.stringify(videoData, null, 2));
-  
+  const { ollamaHost, ollamaPort, ollamaModel } = config || {};
+  if (ollamaHost) {
+    ollamaHostPort = ollamaPort ? `${ollamaHost}:${ollamaPort}` : ollamaHost;
+  }
+  if (ollamaModel) {
+    ollamaModelx = ollamaModel;
+  }
   try {
     // Create a prompt for Ollama to extract structured information
     const prompt = `Analyze the following YouTube video data and extract information in JSON format.
     
 Video Data:
-Title: ${videoData.title}
-Description: ${videoData.description}
-Channel: ${videoData.channelName}
-Resolution: ${videoData.maxResolution}
-URL: ${videoData.url}
-Actor Override: ${videoData.overrideActor || 'None'}
+Title: ${extract.title}
+Description: ${extract.description}
+Channel: ${extract.channelName}
+Resolution: ${extract.maxResolution}
+URL: ${extract.url}
+Actor Override: ${extract.overrideActor || 'None'}
 
 Please extract the following information and return ONLY a valid JSON object with these exact keys:
 - LNG: Primary language of the video/movie/song (like "English", "South", "Hindi", "Marathi", "Bhojpuri", etc.)
-- ACT: Main female actor/celebrity name only if mentioned (or "Unknown" if none found)
+- ACT: Main female actor/celebrity name only if mentioned (or "Unknown" if none found), If Actor Override is provided, use that value
 - MP4URL: The YouTube video URL provided
 - RES: Estimated video resolution based on video quality indicators (720, 1080, 1440, or 2160)
 
@@ -338,7 +346,7 @@ Example format:
     // Return ONLY the structured JSON with the required keys for MQTT
     const structuredData = {
       LNG: extractedData.LNG,
-      ACT: extractedData.ACT,
+      ACT: `${extractedData.ACT}`,
       MP4URL: extractedData.MP4URL,
       RES: extractedData.RES
     };
@@ -386,7 +394,7 @@ Example format:
     
     // Return fallback structured data if Ollama fails - ONLY the required keys
     const fallbackData = {
-      LNG: "en",
+      LNG: "English",
       ACT: "Unknown",
       MP4URL: videoData.url,
       RES: 1080
@@ -433,6 +441,14 @@ function setConfig({ mTopic, mqttHost, mqttPort, ollamaHost, ollamaPort, ollamaM
   if (ollamaHost) ollamaHostPort = ollamaPort ? `${ollamaHost}:${ollamaPort}` : oHost;
   if (mTopic) mqttTopic = mTopic;
   if (ollamaModel) ollamaModelx = ollamaModel;
+    // Log the final config after setting
+  console.log("⚙️ [DEBUG] Config after setConfig:", {
+    mqttBrokerHost,
+    mqttBrokerPort,
+    mqttTopic,
+    ollamaHostPort,
+    ollamaModelx
+  });
 }
 
 // Event listener for messages from other parts of the extension (e.g., popup.js)
@@ -442,13 +458,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     // Add immediate logging to verify the listener is working
     console.log("🔍 [DEBUG] Background script message listener triggered");
-    console.log("📋 [DEBUG] Request details:", JSON.stringify(request, null, 2));
-    console.log("👤 [DEBUG] Sender details:", sender);
     
     // Accept config overrides if provided
-    if (request.config) {
-      setConfig(request.config);
-      console.log("⚙️ [DEBUG] Updated config from message:", request.config);
+    if (request?.data?.config) {
+      setConfig(request.data.config);
+      console.log("⚙️ [DEBUG] Updated config from message:", request.data.config);
     }
 
   if (request.action === "sendMqttMessage") {
@@ -538,6 +552,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 function sendMqttMessage(data) {
   return ensureMqttLibraryLoaded().then(() => {
+    console.log("⚙️ [DEBUG] Using config in sendMqttMessage:", {
+      mqttBrokerHost,
+      mqttBrokerPort,
+      mqttTopic
+    });
     return new Promise((resolve, reject) => {
       console.log("🔧 [DEBUG] Initializing MQTT client...");
       console.log("🌐 [DEBUG] Broker details:", { host: mqttBrokerHost, port: mqttBrokerPort, topic: mqttTopic });

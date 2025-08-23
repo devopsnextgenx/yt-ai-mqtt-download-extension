@@ -12,11 +12,15 @@ function switchTab(tabId) {
   document.getElementById(`${tabId}Tab`).classList.add('active');
 }
 
+let overrideActor = '';
 document.getElementById('sendButton').addEventListener('click', async () => {
   const statusDiv = document.getElementById('status');
   const extractedDataDiv = document.getElementById('extractedData');
   const mqttStatusBox = document.getElementById('mqttStatus');
   const finalJsonBox = document.getElementById('finalJsonBox');
+
+  overrideActor = document.getElementById('actorInput').value;
+  console.log("🎭 [POPUP] Using override actor:", overrideActor);
   // Switch to extracted data tab
   switchTab('extracted');
 
@@ -84,7 +88,6 @@ document.getElementById('sendButton').addEventListener('click', async () => {
         // Send the data to the background script for Ollama processing and MQTT sending
         addMqttStatus('🤖 Sending data to Ollama AI for structured JSON processing...');
         console.log("🤖 [POPUP] Sending video data to background for Ollama processing:", response.data);
-        const overrideActor = document.getElementById('actorInput').value;
 
         // Get user config from input boxes
         const mqttHostPort = document.getElementById('mqttHostPort').value.trim();
@@ -104,14 +107,16 @@ document.getElementById('sendButton').addEventListener('click', async () => {
         // Add the model info to the message
         chrome.runtime.sendMessage({
           action: "sendMqttMessage",
-          data: {...response.data, overrideActor},
-          config: {
-            mTopic: mTopic,
-            mqttHost: mqttConfig.host,
-            mqttPort: mqttConfig.port,
-            ollamaHost: ollamaConfig.host,
-            ollamaPort: ollamaConfig.port,
-            ollamaModel: ollamaModel
+          data: {
+            extract: {...response.data, overrideActor},
+            config: {
+              mTopic: mTopic,
+              mqttHost: mqttConfig.host,
+              mqttPort: mqttConfig.port,
+              ollamaHost: ollamaConfig.host,
+              ollamaPort: ollamaConfig.port,
+              ollamaModel: ollamaModel
+            }
           }
         }, (res) => {
           console.log("📡 [POPUP] Background script response:", res);
@@ -210,22 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Focus status tab by default
   switchTab('status');
-
-  // Add new model selection input
-  const modelInputHtml = `
-    <div style="margin-bottom: 10px;">
-      <input type="text" id="ollamaModel" value="qwen3:latest" placeholder="ollamaModel" style="width: 100%;">
-      <div style="display: inline-block; margin-top: 5px; width: 100%; justify-content: space-evenly;">
-        <input type="text" id="mqttHostPort" value="192.168.12.222:8083" placeholder="mqttHost:port" style="width:35%;">
-        <input type="text" id="ollamaHostPort" value="localhost:11434" placeholder="mqttHost:port" style="width:35%;">
-        <input type="text" id="mTopic" value="vsong" placeholder="topic" style="width:20%;">
-      </div>
-    </div>
-  `;
-
-  // Insert the model input before the first button
-  document.querySelector('#sendButton').insertAdjacentHTML('beforebegin', modelInputHtml);
-  
   // Initialize status box
   mqttStatusBox.value = `[${timestamp}] ℹ️ INFO: Extension loaded - Ready to extract structured JSON {LNG, ACT, MP4URL, RES}\n`;
   
