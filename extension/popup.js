@@ -85,10 +85,34 @@ document.getElementById('sendButton').addEventListener('click', async () => {
         addMqttStatus('🤖 Sending data to Ollama AI for structured JSON processing...');
         console.log("🤖 [POPUP] Sending video data to background for Ollama processing:", response.data);
         const overrideActor = document.getElementById('actorInput').value;
+
+        // Get user config from input boxes
+        const mqttHostPort = document.getElementById('mqttHostPort').value.trim();
+        const ollamaHostPort = document.getElementById('ollamaHostPort').value.trim();
+        const mTopic = document.getElementById('mTopic').value.trim();
+        const ollamaModel = document.getElementById('ollamaModel').value.trim();
+
+        // Helper to split host:port
+        function splitHostPort(str, defaultPort) {
+          const [host, port] = str.split(':');
+          return { host, port: port ? parseInt(port, 10) : defaultPort };
+        }
+        const mqttConfig = splitHostPort(mqttHostPort, 9001);
+        const ollamaConfig = splitHostPort(ollamaHostPort, 12345);
+
+
         // Add the model info to the message
         chrome.runtime.sendMessage({
           action: "sendMqttMessage",
-          data: {...response.data, overrideActor}
+          data: {...response.data, overrideActor},
+          config: {
+            mTopic: mTopic,
+            mqttHost: mqttConfig.host,
+            mqttPort: mqttConfig.port,
+            ollamaHost: ollamaConfig.host,
+            ollamaPort: ollamaConfig.port,
+            ollamaModel: ollamaModel
+          }
         }, (res) => {
           console.log("📡 [POPUP] Background script response:", res);
           if (res && res.status === "success") {
@@ -190,8 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Add new model selection input
   const modelInputHtml = `
     <div style="margin-bottom: 10px;">
-      <label for="ollamaModel">Ollama Model:</label>
-      <input type="text" id="ollamaModel" value="qwen3:latest" style="width: 200px; margin-left: 5px;">
+      <input type="text" id="ollamaModel" value="qwen3:latest" placeholder="ollamaModel" style="width: 100%;">
+      <div style="display: inline-block; margin-top: 5px; width: 100%; justify-content: space-evenly;">
+        <input type="text" id="mqttHostPort" value="192.168.12.222:8083" placeholder="mqttHost:port" style="width:35%;">
+        <input type="text" id="ollamaHostPort" value="localhost:11434" placeholder="mqttHost:port" style="width:35%;">
+        <input type="text" id="mTopic" value="vsong" placeholder="topic" style="width:20%;">
+      </div>
     </div>
   `;
 

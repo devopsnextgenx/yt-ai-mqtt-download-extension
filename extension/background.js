@@ -127,7 +127,7 @@ ensureMqttLibraryLoaded().then(() => {
 async function testOllamaConnection() {
   console.log("🔍 [TEST] Testing Ollama connection...");
   try {
-    const response = await fetch(`http://${ollamaHost}/api/version`, {
+    const response = await fetch(`http://${ollamaHostPort}/api/version`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -151,7 +151,7 @@ async function testOllamaConnection() {
 async function testOllamaModel() {
   console.log("🔍 [TEST] Testing Ollama model availability...");
   try {
-    const response = await fetch(`http://${ollamaHost}/api/tags`, {
+    const response = await fetch(`http://${ollamaHostPort}/api/tags`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -160,13 +160,13 @@ async function testOllamaModel() {
       const models = await response.json();
       console.log("📋 [TEST] Available models:", models.models?.map(m => m.name) || []);
       
-      const modelAvailable = models.models?.some(m => m.name === ollamaModel || m.name.startsWith(ollamaModel));
+      const modelAvailable = models.models?.some(m => m.name === ollamaModelx || m.name.startsWith(ollamaModelx));
       if (modelAvailable) {
-        console.log("✅ [TEST] Model '" + ollamaModel + "' is available!");
+        console.log("✅ [TEST] Model '" + ollamaModelx + "' is available!");
         return true;
       } else {
-        console.warn("⚠️ [TEST] Model '" + ollamaModel + "' not found");
-        console.warn("💡 [TEST] Try: 'ollama pull " + ollamaModel + "'");
+        console.warn("⚠️ [TEST] Model '" + ollamaModelx + "' not found");
+        console.warn("💡 [TEST] Try: 'ollama pull " + ollamaModelx + "'");
         return false;
       }
     } else {
@@ -181,7 +181,7 @@ async function testOllamaModel() {
 
 async function processVideoDataWithOllama(videoData) {
   console.log("🤖 [DEBUG] Starting Ollama processing for video data...");
-  console.log("📋 [DEBUG] Ollama configuration:", { host: ollamaHost, model: ollamaModel });
+  console.log("📋 [DEBUG] Ollama configuration:", { host: ollamaHostPort, model: ollamaModelx });
   console.log("📊 [DEBUG] Input video data:", JSON.stringify(videoData, null, 2));
   
   try {
@@ -208,10 +208,10 @@ Example format:
 {"LNG": "English", "ACT": "Tom Hanks", "MP4URL": "https://youtube.com/watch?v=xyz", "RES": 1080}`;
 
     console.log("📝 [DEBUG] Ollama prompt created, length:", prompt.length, "characters");
-    console.log("🌐 [DEBUG] Making HTTP request to Ollama API:", `http://${ollamaHost}/api/generate`);
+    console.log("🌐 [DEBUG] Making HTTP request to Ollama API:", `http://${ollamaHostPort}/api/generate`);
     
     const requestBody = {
-      model: ollamaModel,
+      model: ollamaModelx,
       prompt: prompt,
       stream: false,
       format: 'json',
@@ -224,7 +224,7 @@ Example format:
     console.log("📤 [DEBUG] Ollama request body:", JSON.stringify(requestBody, null, 2));
     
     const startTime = Date.now();
-    const response = await fetch(`http://${ollamaHost}/api/generate`, {
+    const response = await fetch(`http://${ollamaHostPort}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -255,8 +255,8 @@ Example format:
         throw new Error(`Ollama CORS Error (403): Browser extension blocked. Start Ollama with: OLLAMA_ORIGINS=* ollama serve`);
       } else if (response.status === 404) {
         console.error("🔍 [ERROR] 404 Not Found - Check if model exists");
-        console.error("💡 [SOLUTION] Try: ollama pull " + ollamaModel);
-        throw new Error(`Ollama Model Not Found (404): Try 'ollama pull ${ollamaModel}'`);
+        console.error("💡 [SOLUTION] Try: ollama pull " + ollamaModelx);
+        throw new Error(`Ollama Model Not Found (404): Try 'ollama pull ${ollamaModelx}'`);
       } else if (response.status === 500) {
         console.error("⚠️ [ERROR] 500 Server Error - Ollama internal error");
         console.error("💡 [SOLUTION] Check Ollama logs and restart service");
@@ -365,7 +365,7 @@ Example format:
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       console.error("🌐 [ERROR] Network error - Ollama server may be unreachable");
       console.error("💡 [ERROR] Check if Ollama is running: 'ollama serve'");
-      console.error("💡 [ERROR] Verify Ollama host configuration:", ollamaHost);
+      console.error("💡 [ERROR] Verify Ollama host configuration:", ollamaHostPort);
     } else if (error.message.includes('CORS Error') || error.message.includes('403')) {
       console.error("🚫 [ERROR] CORS/Permission error - Browser extension blocked by Ollama");
       console.error("💡 [SOLUTION] Start Ollama with CORS enabled:");
@@ -376,7 +376,7 @@ Example format:
     } else if (error.message.includes('API request failed')) {
       console.error("📡 [ERROR] Ollama API returned an error response");
       console.error("💡 [ERROR] Check if the model is available: 'ollama list'");
-      console.error("💡 [ERROR] Try pulling the model: 'ollama pull " + ollamaModel + "'");
+      console.error("💡 [ERROR] Try pulling the model: 'ollama pull " + ollamaModelx + "'");
     } else if (error.message.includes('JSON')) {
       console.error("📄 [ERROR] JSON parsing error - Ollama returned invalid JSON");
       console.error("💡 [ERROR] Model may need fine-tuning or different prompt");
@@ -404,8 +404,8 @@ Example format:
     console.log("  1. Ensure Ollama is running: 'ollama serve'");
     console.log("  2. Enable CORS for browser extensions: 'OLLAMA_ORIGINS=* ollama serve'");
     console.log("  3. Check model availability: 'ollama list'");
-    console.log("  4. Pull model if needed: 'ollama pull " + ollamaModel + "'");
-    console.log("  5. Test connection: 'curl " + ollamaHost + "/api/version'");
+    console.log("  4. Pull model if needed: 'ollama pull " + ollamaModelx + "'");
+    console.log("  5. Test connection: 'curl " + ollamaHostPort + "/api/version'");
     console.log("  6. For persistent CORS fix, set environment variable:");
     console.log("     Windows: set OLLAMA_ORIGINS=*");
     console.log("     Linux/Mac: export OLLAMA_ORIGINS=*");
@@ -416,16 +416,24 @@ Example format:
 
 // === CONFIGURATION ===
 // !!! REPLACE THESE WITH YOUR OWN MQTT BROKER DETAILS !!!
-const mqttBrokerHost = '192.168.12.222'; // Your MQTT broker IP address
-const mqttBrokerPort = 8083; // WebSocket port (browser extensions require WebSocket, not direct MQTT)
-const mqttTopic = 'vsong';
-const useWebSocket = true; // Force WebSocket connection for browser compatibility
+let mqttBrokerHost = '192.168.12.222'; // Your MQTT broker IP address
+let mqttBrokerPort = 8083; // WebSocket port (browser extensions require WebSocket, not direct MQTT)
+let mqttTopic = 'vsong';
+let useWebSocket = true; // Force WebSocket connection for browser compatibility
 // Note: Browser extensions cannot use mqtt:// protocol directly, only WebSocket
 
 // === OLLAMA CONFIGURATION ===
-const ollamaHost = 'localhost:11434'; // Ollama API endpoint
-const ollamaModel = 'qwen3:latest'; // Default Ollama model (change as needed)
+let ollamaHostPort = 'localhost:11434'; // Ollama API endpoint
+let ollamaModelx = 'qwen3:latest'; // Default Ollama model (change as needed)
 // =====================
+
+function setConfig({ mTopic, mqttHost, mqttPort, ollamaHost, ollamaPort, ollamaModel }) {
+  if (mqttHost) mqttBrokerHost = mqttHost;
+  if (mqttPort) mqttBrokerPort = Number(mqttPort);
+  if (ollamaHost) ollamaHostPort = ollamaPort ? `${ollamaHost}:${ollamaPort}` : oHost;
+  if (mTopic) mqttTopic = mTopic;
+  if (ollamaModel) ollamaModelx = ollamaModel;
+}
 
 // Event listener for messages from other parts of the extension (e.g., popup.js)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -436,7 +444,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log("🔍 [DEBUG] Background script message listener triggered");
     console.log("📋 [DEBUG] Request details:", JSON.stringify(request, null, 2));
     console.log("👤 [DEBUG] Sender details:", sender);
-  
+    
+    // Accept config overrides if provided
+    if (request.config) {
+      setConfig(request.config);
+      console.log("⚙️ [DEBUG] Updated config from message:", request.config);
+    }
+
   if (request.action === "sendMqttMessage") {
     console.log("🎯 [DEBUG] Processing sendMqttMessage action");
     
@@ -498,8 +512,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         note: "Browser extensions require WebSocket support on MQTT broker"
       },
       ollamaInfo: {
-        host: ollamaHost,
-        model: ollamaModel,
+        host: ollamaHostPort,
+        model: ollamaModelx,
         note: "Ollama will enhance data extraction with AI analysis"
       }
     });
