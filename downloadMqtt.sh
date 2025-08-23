@@ -5,8 +5,8 @@ TOPIC="vsong"
 BROKER="localhost"   # change if remote broker
 LOGFILE="/home/shared/logs/vsongs.log"
 TMPDIR="/tmp/songs"
-BASE_DIR="/home/kira/Videos/HD"  # change to your target directory
-BASE_MOVIE_DIR="/home/kira/Videos/Movies"
+BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"  # change to your target directory
+BASE_MOVIE_DIR="/media/data/storage/ShareMe/media/movies"
 # BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"
 SLACK_WEBHOOK_URL="https://hooks.slack.com/services/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"  # replace with your webhook
 
