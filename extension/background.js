@@ -645,7 +645,7 @@ function sendMqttMessage(data) {
           const mqttMessage = new messageConstructor(messagePayload);
           mqttMessage.destinationName = mqttTopic;
           mqttMessage.qos = 1; // Quality of Service level 1 (at least once) - try this instead of 2
-          mqttMessage.retained = true;
+          mqttMessage.retained = false;
           
           console.log("📤 [DEBUG] Message details:", {
             topic: mqttMessage.destinationName,

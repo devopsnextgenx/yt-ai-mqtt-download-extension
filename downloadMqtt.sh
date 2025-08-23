@@ -20,7 +20,7 @@ log() {
 declare -A FVCODE_MAP=( ["2160"]="401" ["1440"]="400" ["1080"]="399" ["720"]="398" )
 
 # Poll messages (run every 5 minutes via cron)
-messages=$(timeout 10s mosquitto_sub -h "$BROKER" -t "$TOPIC" -i unique_client_id -q 1 -C 10)
+messages=$(timeout 10s mosquitto_sub -h "$BROKER" -t "$TOPIC" -c -i downloadmqttsub -q 1)
 
 if [ -z "$messages" ]; then
     log "No messages received from MQTT."
