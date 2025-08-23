@@ -427,7 +427,7 @@ Example format:
 
 // === CONFIGURATION ===
 // !!! REPLACE THESE WITH YOUR OWN MQTT BROKER DETAILS !!!
-let mqttBrokerHost = '192.168.12.222'; // Your MQTT broker IP address
+let mqttBrokerHost = '192.168.12.111'; // Your MQTT broker IP address
 let mqttBrokerPort = 8083; // WebSocket port (browser extensions require WebSocket, not direct MQTT)
 let mqttTopic = 'vsong';
 let useWebSocket = true; // Force WebSocket connection for browser compatibility
