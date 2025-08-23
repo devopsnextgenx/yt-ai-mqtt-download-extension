@@ -127,7 +127,7 @@ ensureMqttLibraryLoaded().then(() => {
 async function testOllamaConnection() {
   console.log("🔍 [TEST] Testing Ollama connection...");
   try {
-    const response = await fetch(`${ollamaHost}/api/version`, {
+    const response = await fetch(`http://${ollamaHost}/api/version`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -151,7 +151,7 @@ async function testOllamaConnection() {
 async function testOllamaModel() {
   console.log("🔍 [TEST] Testing Ollama model availability...");
   try {
-    const response = await fetch(`${ollamaHost}/api/tags`, {
+    const response = await fetch(`http://${ollamaHost}/api/tags`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -208,7 +208,7 @@ Example format:
 {"LNG": "English", "ACT": "Tom Hanks", "MP4URL": "https://youtube.com/watch?v=xyz", "RES": 1080}`;
 
     console.log("📝 [DEBUG] Ollama prompt created, length:", prompt.length, "characters");
-    console.log("🌐 [DEBUG] Making HTTP request to Ollama API:", `${ollamaHost}/api/generate`);
+    console.log("🌐 [DEBUG] Making HTTP request to Ollama API:", `http://${ollamaHost}/api/generate`);
     
     const requestBody = {
       model: ollamaModel,
@@ -224,7 +224,7 @@ Example format:
     console.log("📤 [DEBUG] Ollama request body:", JSON.stringify(requestBody, null, 2));
     
     const startTime = Date.now();
-    const response = await fetch(`${ollamaHost}/api/generate`, {
+    const response = await fetch(`http://${ollamaHost}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -416,14 +416,14 @@ Example format:
 
 // === CONFIGURATION ===
 // !!! REPLACE THESE WITH YOUR OWN MQTT BROKER DETAILS !!!
-const mqttBrokerHost = '192.168.12.111'; // Your MQTT broker IP address
+const mqttBrokerHost = '192.168.12.222'; // Your MQTT broker IP address
 const mqttBrokerPort = 8083; // WebSocket port (browser extensions require WebSocket, not direct MQTT)
 const mqttTopic = 'vsong';
 const useWebSocket = true; // Force WebSocket connection for browser compatibility
 // Note: Browser extensions cannot use mqtt:// protocol directly, only WebSocket
 
 // === OLLAMA CONFIGURATION ===
-const ollamaHost = 'http://localhost:11434'; // Ollama API endpoint
+const ollamaHost = 'localhost:11434'; // Ollama API endpoint
 const ollamaModel = 'qwen3:latest'; // Default Ollama model (change as needed)
 // =====================
 

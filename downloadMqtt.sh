@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-TOPIC="VSONG"
+TOPIC="vsong"
 BROKER="localhost"   # change if remote broker
 LOGFILE="/home/shared/logs/vsongs.log"
 TMPDIR="/tmp/songs"
@@ -17,7 +17,7 @@ log() {
 }
 
 # Poll messages (run every 5 minutes via cron)
-messages=$(timeout 20s mosquitto_sub -h "$BROKER" -t "$TOPIC" -C 10)
+messages=$(timeout 60s mosquitto_sub -h "$BROKER" -t "$TOPIC" -C 10)
 
 if [ -z "$messages" ]; then
     log "No messages received from MQTT."
@@ -55,9 +55,8 @@ echo "$messages" | while read -r msg; do
     # Download
     start_time=$(date +%s)
     log "Downloading: LNG=$LNG, ACT=$ACT, RES=$RES, URL=$MP4URL"
-
-    yt-dlp -f "$FORMAT" --merge-output-format mp4 --no-progress -c "$MP4URL" \
-        --restrict-filenames -o "$TMPDIR/%(title)s.%(ext)s" >> "$LOGFILE" 2>&1
+    
+    yt-dlp -f "$FORMAT" --merge-output-format mp4 --no-progress -c "$MP4URL" --restrict-filenames -o "$TMPDIR/%(title)s.%(ext)s" >> "$LOGFILE" 2>&1
 
     if [ $? -ne 0 ]; then
         log "Download failed: $MP4URL"
