@@ -201,6 +201,7 @@ Title: ${extract.title}
 Description: ${extract.description}
 Channel: ${extract.channelName}
 Resolution: ${extract.maxResolution}
+Duration: ${extract.duration}
 URL: ${extract.url}
 Actor Override: ${extract.overrideActor || 'None'}
 
@@ -208,8 +209,8 @@ Please extract the following information and return ONLY a valid JSON object wit
 - LNG: Primary language of the video/movie/song (like "English", "South", "Hindi", "Marathi", "Bhojpuri", etc.)
 - ACT: Main female actor/celebrity name only if mentioned (or "Unknown" if none found), If Actor Override is provided, use that value
 - MP4URL: The YouTube video URL provided
-- RES: Estimated video resolution based on video quality indicators (720, 1080, 1440, or 2160)
-
+- RES: Estimated video resolution based on video quality indicators (720, 1080, 1440, or 2160) Use 1080 if unsure, if maxResolution is available use exact or closest higher value
+- TYPE: Can be SONG or MOVIE based on duration if Duration < 10min then SONG else MOVIE
 Important: Return ONLY the JSON object, no additional text or explanation.
 
 Example format:
@@ -338,6 +339,7 @@ Example format:
         ACT: extractedData.ACT || "Unknown", 
         MP4URL: extractedData.MP4URL || videoData.url,
         RES: extractedData.RES || 1080,
+        TYPE: extractedData.TYPE,
         ...extractedData // Keep any additional data
       };
       console.log("✅ [DEBUG] Fixed extracted data with defaults:", extractedData);
@@ -348,7 +350,8 @@ Example format:
       LNG: extractedData.LNG,
       ACT: `${extractedData.ACT}`,
       MP4URL: extractedData.MP4URL,
-      RES: extractedData.RES
+      RES: extractedData.RES,
+      TYPE: extractedData.TYPE
     };
 
     console.log("🎉 [SUCCESS] Ollama processing completed successfully!");
@@ -642,7 +645,7 @@ function sendMqttMessage(data) {
           const mqttMessage = new messageConstructor(messagePayload);
           mqttMessage.destinationName = mqttTopic;
           mqttMessage.qos = 1; // Quality of Service level 1 (at least once) - try this instead of 2
-          mqttMessage.retained = false;
+          mqttMessage.retained = true;
           
           console.log("📤 [DEBUG] Message details:", {
             topic: mqttMessage.destinationName,

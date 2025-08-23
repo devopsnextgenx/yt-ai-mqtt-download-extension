@@ -6,6 +6,7 @@ BROKER="localhost"   # change if remote broker
 LOGFILE="/home/shared/logs/vsongs.log"
 TMPDIR="/tmp/songs"
 BASE_DIR="/home/kira/Videos/HD"  # change to your target directory
+BASE_MOVIE_DIR="/home/kira/Videos/Movies"
 # BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"
 SLACK_WEBHOOK_URL="https://hooks.slack.com/services/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"  # replace with your webhook
 
@@ -16,8 +17,10 @@ log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOGFILE"
 }
 
+declare -A FVCODE_MAP=( ["2160"]="401" ["1440"]="400" ["1080"]="399" ["720"]="398" )
+
 # Poll messages (run every 5 minutes via cron)
-messages=$(timeout 60s mosquitto_sub -h "$BROKER" -t "$TOPIC" -C 10)
+messages=$(timeout 10s mosquitto_sub -h "$BROKER" -t "$TOPIC" -i unique_client_id -q 1 -C 10)
 
 if [ -z "$messages" ]; then
     log "No messages received from MQTT."
@@ -36,20 +39,37 @@ echo "$messages" | while read -r msg; do
     log "Processing message: $msg"
     LNG=$(echo "$msg" | jq -r '.LNG')
     ACT=$(echo "$msg" | jq -r '.ACT')
-    RES=$(echo "$msg" | jq -r '.RES')
+    RES=$(echo "$msg" | jq -r '.RES') # 2160/1440/1080/720
     MP4URL=$(echo "$msg" | jq -r '.MP4URL')
+    TYPE=$(echo "$msg" | jq -r '.TYPE')
 
     # Validate
     if [ -z "$LNG" ] || [ -z "$ACT" ] || [ -z "$RES" ] || [ -z "$MP4URL" ]; then
         log "Invalid message: $msg"
         continue
     fi
-
-    # Paths
+    
     TARGET_DIR="$BASE_DIR/$LNG/$ACT/$RES"
+    # Paths
+    if [ "$TYPE" == "Movie" ]; then
+        LNG="bollywood"
+        if [ "$LNG" = "English" ]; then
+            LNG="hollywood"
+        fi
+        TARGET_DIR="$BASE_MOVIE_DIR/$LNG"
+    fi
+    
     mkdir -p "$TARGET_DIR"
 
     # Format string
+    FVCODE="${FVCODE_MAP[$RES]}"
+    if [ -z "$FVCODE" ]; then
+        log "Unknown RES '$RES' — cannot determine video format code. Skipping."
+        FVCODE=399  # default to 1080p
+    fi
+
+    FACODE=140  # m4a audio
+    # FORMAT="${FVCODE}+${FACODE}"
     FORMAT="bestvideo[height<=${RES}]+bestaudio[ext=m4a]/mp4"
 
     # Download
@@ -81,6 +101,7 @@ echo "$messages" | while read -r msg; do
     count=$((count+1))
 
 done
+mosquitto_pub -h localhost -t "vsong" -n -r
 
 # Notify Slack after batch if any downloads succeeded
 if [ "$count" -gt 0 ]; then
