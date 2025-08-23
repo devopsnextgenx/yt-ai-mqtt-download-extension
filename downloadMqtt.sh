@@ -8,7 +8,7 @@ TMPDIR="/tmp/songs"
 BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"  # change to your target directory
 BASE_MOVIE_DIR="/media/data/storage/ShareMe/media/movies"
 # BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"
-SLACK_WEBHOOK_URL="https://hooks.slack.com/services/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"  # replace with your webhook
+SLACK_WEBHOOK_URL="https://hooks.slack.com/services/xxxx"  # replace with your webhook
 
 mkdir -p "$TMPDIR"
 
@@ -18,6 +18,7 @@ log() {
 }
 
 declare -A FVCODE_MAP=( ["2160"]="401" ["1440"]="400" ["1080"]="399" ["720"]="398" )
+declare -A FVSTORE_MAP=( ["2160"]="4k" ["1440"]="2k" ["1080"]="1080p" ["720"]="720p" )
 
 # Poll messages (run every 5 minutes via cron)
 messages=$(timeout 10s mosquitto_sub -h "$BROKER" -t "$TOPIC" -c -i downloadmqttsub -q 1)
@@ -49,17 +50,6 @@ echo "$messages" | while read -r msg; do
         continue
     fi
     
-    TARGET_DIR="$BASE_DIR/$LNG/$RES/$ACT"
-    # Paths
-    if [ "$TYPE" == "Movie" ]; then
-        LNG="bollywood"
-        if [ "$LNG" = "English" ]; then
-            LNG="hollywood"
-        fi
-        TARGET_DIR="$BASE_MOVIE_DIR/$LNG"
-    fi
-    
-    mkdir -p "$TARGET_DIR"
 
     # Format string
     FVCODE="${FVCODE_MAP[$RES]}"
@@ -86,7 +76,36 @@ echo "$messages" | while read -r msg; do
     # Find most recent file
     FILE=$(ls -t "$TMPDIR" | head -1)
     SRC="$TMPDIR/$FILE"
+    HEIGHT=`ffprobe -v quiet -select_streams v -show_streams "$TMPDIR/$FILE" | grep height |grep -v coded|cut -d "=" -f 2`
+
+    RES="${FVSTORE_MAP[$HEIGHT]}"
+
+    if [ -z "$RES" ]; then
+        log "Could not determine storage RES for height $HEIGHT. Using original RES $RES."
+        RES="UNKNOWN"
+    fi
+
+    normalized_lng="${LNG,,}"
+    case "${normalized_lng,,}" in
+        telugu|kannada|tamil|malayalam|malyalam)
+            LNG="South"
+            ;;
+    esac
+    # Paths
+    TARGET_DIR="$BASE_DIR/$LNG/$RES/$ACT"
+    if [ "$TYPE" == "Movie" ]; then
+        LNG="bollywood"
+        if [ "$LNG" = "English" ]; then
+            LNG="hollywood"
+        fi
+        TARGET_DIR="$BASE_MOVIE_DIR/$LNG"
+    fi
+    
+    mkdir -p "$TARGET_DIR"
+
     DEST="$TARGET_DIR/$FILE"
+    
+    log "Moving to: $TARGET_DIR"
 
     mv "$SRC" "$DEST"
 
@@ -95,7 +114,6 @@ echo "$messages" | while read -r msg; do
     filesize=$(du -h "$DEST" | cut -f1)
 
     log "Downloaded: $DEST ($filesize in ${elapsed}s)"
-
     # Append to summary
     summary="${summary}✅ $FILE\nURL: $MP4URL\nSize: $filesize\nPath: $DEST\nTime: ${elapsed}s\n\n"
     count=$((count+1))
