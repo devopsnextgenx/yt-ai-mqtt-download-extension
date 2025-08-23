@@ -49,7 +49,7 @@ echo "$messages" | while read -r msg; do
         continue
     fi
     
-    TARGET_DIR="$BASE_DIR/$LNG/$ACT/$RES"
+    TARGET_DIR="$BASE_DIR/$LNG/$RES/$ACT"
     # Paths
     if [ "$TYPE" == "Movie" ]; then
         LNG="bollywood"
