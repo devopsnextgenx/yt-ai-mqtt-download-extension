@@ -5,9 +5,9 @@ TOPIC="vsong"
 BROKER="localhost"   # change if remote broker
 LOGFILE="/home/shared/logs/vsongs.log"
 TMPDIR="/tmp/songs"
-BASE_DIR="/media/zbox/Crucial-X6/ShareMe/media/songs/target"  # change to your target directory
-BASE_MOVIE_DIR="/media/zbox/storage/ShareMe/media/movies"
-# BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"
+# BASE_DIR="/media/zbox/Crucial-X6/ShareMe/media/songs/target"  # change to your target directory
+# BASE_MOVIE_DIR="/media/zbox/storage/ShareMe/media/movies"
+BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"
 SLACK_WEBHOOK_URL="https://hooks.slack.com/xxxxxxxxxxxxxxxxxxxx"  # replace with your webhook
 
 mkdir -p "$TMPDIR"
@@ -58,9 +58,11 @@ while IFS= read -r msg; do
         FVCODE=399  # default to 1080p
     fi
 
-    FACODE=`yt-dlp -F "$MP4URL" |grep audio | tail -1 |cut -d " " -f 1`
+    # Get format codes in one yt-dlp call
+    FORMATS=$(yt-dlp -F "$MP4URL")
+    FACODE=$(echo "$FORMATS" | grep audio | tail -1 | awk '{print $1}')
     log "FACODE: $FACODE"
-    FVCODE=`yt-dlp -F "$MP4URL" |grep 1080 | tail -1 |cut -d " " -f 1`
+    FVCODE=$(echo "$FORMATS" | grep 1080 | tail -1 | awk '{print $1}')
     log "FVCODE: $FVCODE"
     FORMAT=$FVCODE+$FACODE
 
@@ -119,7 +121,8 @@ while IFS= read -r msg; do
 
     log "Downloaded: $DEST ($filesize in ${elapsed}s)"
     # Append to summary
-    summary="${summary}✅ $FILE\nURL: $MP4URL\nSize: $filesize\nPath: $DEST\nTime: ${elapsed}s\n\n"
+    summary="${summary}\n✅ URL: $MP4URL\nPath: $DEST\nSize: $filesize (Time: ${elapsed}s)\n"
+    summary="${summary}\n========================================================================\n"
     log "$summary"
     count=$((count+1))
 
