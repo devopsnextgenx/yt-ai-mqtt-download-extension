@@ -8,7 +8,7 @@ TMPDIR="/tmp/songs"
 BASE_DIR="/media/zbox/Crucial-X6/ShareMe/media/songs/target"  # change to your target directory
 BASE_MOVIE_DIR="/media/data/storage/ShareMe/media/movies"
 # BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"
-SLACK_WEBHOOK_URL="https://hooks.slack.com/services/xxxx"  # replace with your webhook
+SLACK_WEBHOOK_URL="https://hooks.slack.com/xxxxxxxxxxxxxxxxxxxx"  # replace with your webhook
 
 mkdir -p "$TMPDIR"
 
@@ -58,17 +58,19 @@ echo "$messages" | while read -r msg; do
         FVCODE=399  # default to 1080p
     fi
 
-    FACODE=`yt-dlp -F "$MP4URL" |grep m4a | tail -1 |cut -d " " -f 1`
+    FACODE=`yt-dlp -F "$MP4URL" |grep audio | tail -1 |cut -d " " -f 1`
+    log "FACODE: $FACODE"
     FVCODE=`yt-dlp -F "$MP4URL" |grep 1080 | tail -1 |cut -d " " -f 1`
+    log "FVCODE: $FVCODE"
     FORMAT=$FVCODE+$FACODE
 
     # FORMAT="bestvideo[height<=${RES}]+bestaudio[ext=m4a]/mp4"
 
     # Download
     start_time=$(date +%s)
-    log "Downloading: LNG=$LNG, ACT=$ACT, RES=$RES, URL=$MP4URL"
+    log "Downloading: LNG=$LNG, ACT=$ACT, RES=$RES, URL=$MP4URL, FORMAT=$FORMAT"
     
-    yt-dlp -f "$FORMAT" --merge-output-format mp4 --no-progress -c "$MP4URL" --restrict-filenames -o "$TMPDIR/%(title)s.%(ext)s" >> "$LOGFILE" 2>&1
+    yt-dlp -f $FVCODE+$FACODE --merge-output-format mp4 --no-progress -c "$MP4URL" --restrict-filenames -o "$TMPDIR/%(title)s.%(ext)s" >> "$LOGFILE" 2>&1
 
     if [ $? -ne 0 ]; then
         log "Download failed: $MP4URL"
