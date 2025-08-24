@@ -8,7 +8,8 @@ TMPDIR="/tmp/songs"
 # BASE_DIR="/media/zbox/Crucial-X6/ShareMe/media/songs/target"  # change to your target directory
 # BASE_MOVIE_DIR="/media/zbox/storage/ShareMe/media/movies"
 BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"
-SLACK_WEBHOOK_URL="https://hooks.slack.com/xxxxxxxxxxxxxxxxxxxx"  # replace with your webhook
+# Read SLACK_WEBHOOK_URL from secret file
+SLACK_WEBHOOK_URL=$(grep '^SLACK_WEBHOOK_URL=' /home/shared/.secrets | cut -d'=' -f2-)
 
 mkdir -p "$TMPDIR"
 
@@ -99,7 +100,9 @@ while IFS= read -r msg; do
     esac
     # Paths
     TARGET_DIR="$BASE_DIR/$LNG/$RES/$ACT"
-    if [ "$TYPE" == "Movie" ]; then
+
+    normalized_type="${TYPE,,}"
+    if [ "$normalized_type" == "movie" ]; then
         LNG="bollywood"
         if [ "$LNG" = "English" ]; then
             LNG="hollywood"
