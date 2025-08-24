@@ -13,6 +13,7 @@ function switchTab(tabId) {
 }
 
 let overrideActor = '';
+let overrideResolution = ''; // Default resolution 
 document.getElementById('sendButton').addEventListener('click', async () => {
   const statusDiv = document.getElementById('status');
   const extractedDataDiv = document.getElementById('extractedData');
@@ -20,6 +21,8 @@ document.getElementById('sendButton').addEventListener('click', async () => {
   const finalJsonBox = document.getElementById('finalJsonBox');
 
   overrideActor = document.getElementById('actorInput').value;
+  overrideResolution = document.getElementById('resolutionSelect').value; // <-- Add this line
+
   console.log("🎭 [POPUP] Using override actor:", overrideActor);
   // Switch to extracted data tab
   switchTab('extracted');
@@ -108,7 +111,7 @@ document.getElementById('sendButton').addEventListener('click', async () => {
         chrome.runtime.sendMessage({
           action: "sendMqttMessage",
           data: {
-            extract: {...response.data, overrideActor},
+            extract: {...response.data, overrideActor, overrideResolution},
             config: {
               mTopic: mTopic,
               mqttHost: mqttConfig.host,
@@ -202,6 +205,7 @@ document.getElementById('clearStatusButton').addEventListener('click', () => {
 
 // Initialize status box with configuration info
 document.addEventListener('DOMContentLoaded', () => {
+  const resolutionSelect = document.getElementById('resolutionSelect');
   const mqttStatusBox = document.getElementById('mqttStatus');
   const finalJsonBox = document.getElementById('finalJsonBox');
   const timestamp = new Date().toLocaleTimeString();

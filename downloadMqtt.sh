@@ -21,7 +21,7 @@ declare -A FVCODE_MAP=( ["2160"]="401" ["1440"]="400" ["1080"]="399" ["720"]="39
 declare -A FVSTORE_MAP=( ["2160"]="4k" ["1440"]="2k" ["1080"]="1080p" ["720"]="720p" )
 
 # Poll messages (run every 5 minutes via cron)
-messages=$(timeout 10s mosquitto_sub -h "$BROKER" -t "$TOPIC" -c -i downloadmqttsub -q 1)
+messages=$(timeout 10s mosquitto_sub -h "$BROKER" -t "$TOPIC"  -q 1 -c -i downloadmqttsub)
 
 if [ -z "$messages" ]; then
     log "No messages received from MQTT."
@@ -120,6 +120,7 @@ while IFS= read -r msg; do
     log "Downloaded: $DEST ($filesize in ${elapsed}s)"
     # Append to summary
     summary="${summary}✅ $FILE\nURL: $MP4URL\nSize: $filesize\nPath: $DEST\nTime: ${elapsed}s\n\n"
+    log "$summary"
     count=$((count+1))
 
 done <<< "$messages"

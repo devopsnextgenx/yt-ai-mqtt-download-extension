@@ -200,7 +200,7 @@ Video Data:
 Title: ${extract.title}
 Description: ${extract.description}
 Channel: ${extract.channelName}
-Resolution: ${extract.maxResolution}
+Resolution: ${extract.overrideResolution || extract.maxResolution}
 Duration: ${extract.duration}
 URL: ${extract.url}
 Actor Override: ${extract.overrideActor || 'None'}
@@ -315,7 +315,8 @@ Example format:
         LNG: "English", // Default to English
         ACT: "Unknown",
         MP4URL: videoData.url,
-        RES: 1080 // Default resolution
+        RES: 1080, // Default resolution
+        TITLE: extract.title
       };
       console.log("🔄 [DEBUG] Using fallback structured JSON due to parse error:", extractedData);
     }
@@ -351,7 +352,8 @@ Example format:
       ACT: `${extractedData.ACT}`,
       MP4URL: extractedData.MP4URL,
       RES: extractedData.RES,
-      TYPE: extractedData.TYPE
+      TYPE: extractedData.TYPE,
+      TITLE: extract.title
     };
 
     console.log("🎉 [SUCCESS] Ollama processing completed successfully!");
@@ -400,7 +402,8 @@ Example format:
       LNG: "English",
       ACT: "Unknown",
       MP4URL: videoData.url,
-      RES: 1080
+      RES: 1080,
+      TITLE: extract.title
     };
     
     console.log("🔄 [FALLBACK] Using fallback structured JSON due to Ollama error");
