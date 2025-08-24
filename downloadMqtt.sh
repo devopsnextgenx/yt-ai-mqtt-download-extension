@@ -58,9 +58,10 @@ echo "$messages" | while read -r msg; do
         FVCODE=399  # default to 1080p
     fi
 
-    FACODE=`yt-dlp -F "https://www.youtube.com/watch?v=-4AN2MMkeFA" |grep m4a | tail -1 |cut -d " " -f 1`
-    FVCODE=`yt-dlp -F "https://www.youtube.com/watch?v=-4AN2MMkeFA" |grep 1080 | tail -1 |cut -d " " -f 1`
-    FORMAT="${FVCODE}+${FACODE}"
+    FACODE=`yt-dlp -F "$MP4URL" |grep m4a | tail -1 |cut -d " " -f 1`
+    FVCODE=`yt-dlp -F "$MP4URL" |grep 1080 | tail -1 |cut -d " " -f 1`
+    FORMAT=$FVCODE+$FACODE
+
     # FORMAT="bestvideo[height<=${RES}]+bestaudio[ext=m4a]/mp4"
 
     # Download
