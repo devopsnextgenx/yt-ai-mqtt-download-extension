@@ -6,7 +6,7 @@ BROKER="localhost"   # change if remote broker
 LOGFILE="/home/shared/logs/vsongs.log"
 TMPDIR="/tmp/songs"
 BASE_DIR="/media/zbox/Crucial-X6/ShareMe/media/songs/target"  # change to your target directory
-BASE_MOVIE_DIR="/media/data/storage/ShareMe/media/movies"
+BASE_MOVIE_DIR="/media/zbox/storage/ShareMe/media/movies"
 # BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"
 SLACK_WEBHOOK_URL="https://hooks.slack.com/xxxxxxxxxxxxxxxxxxxx"  # replace with your webhook
 
@@ -35,7 +35,7 @@ summary=""
 count=0
 
 # Process each JSON message
-echo "$messages" | while read -r msg; do
+while IFS= read -r msg; do
     [ -z "$msg" ] && continue
     log "Processing message: $msg"
     LNG=$(echo "$msg" | jq -r '.LNG')
@@ -122,8 +122,12 @@ echo "$messages" | while read -r msg; do
     summary="${summary}✅ $FILE\nURL: $MP4URL\nSize: $filesize\nPath: $DEST\nTime: ${elapsed}s\n\n"
     count=$((count+1))
 
-done
+done <<< "$messages"
+
 mosquitto_pub -h localhost -t "vsong" -n -r
+
+log "Finished processing batch. Total successful downloads: $count"
+log "Summary:\n$summary"
 
 # Notify Slack after batch if any downloads succeeded
 if [ "$count" -gt 0 ]; then
