@@ -63,7 +63,7 @@ while IFS= read -r msg; do
     FORMATS=$(yt-dlp -F "$MP4URL")
     FACODE=$(echo "$FORMATS" | grep audio | tail -1 | awk '{print $1}')
     log "FACODE: $FACODE"
-    FVCODE=$(echo "$FORMATS" | grep 1080 | tail -1 | awk '{print $1}')
+    FVCODE=$(echo "$FORMATS" | grep $RES | tail -1 | awk '{print $1}')
     log "FVCODE: $FVCODE"
     FORMAT=$FVCODE+$FACODE
 
@@ -85,11 +85,23 @@ while IFS= read -r msg; do
     SRC="$TMPDIR/$FILE"
     HEIGHT=`ffprobe -v quiet -select_streams v -show_streams "$TMPDIR/$FILE" | grep height |grep -v coded|cut -d "=" -f 2`
 
-    RES="${FVSTORE_MAP[$HEIGHT]}"
+    VRES="${FVSTORE_MAP[$HEIGHT]}"
 
-    if [ -z "$RES" ]; then
+
+    if [ -z "$VRES" ]; then
         log "Could not determine storage RES for height $HEIGHT. Using original RES $RES."
-        RES="UNKNOWN"
+        if [ "$RES" -le 720 ]; then
+            VRES=720
+        elif [ "$RES" -le 1080 ]; then
+            VRES=1080
+        elif [ "$RES" -le 1440 ]; then
+            VRES=1440
+        elif [ "$RES" -le 2160 ]; then
+            VRES=2160
+        else
+            VRES=2160
+            echo "Warning: RES ($RES) is higher than 2160, setting VRES to 2160"
+        fi
     fi
 
     normalized_lng="${LNG,,}"
@@ -99,7 +111,7 @@ while IFS= read -r msg; do
             ;;
     esac
     # Paths
-    TARGET_DIR="$BASE_DIR/$LNG/$RES/$ACT"
+    TARGET_DIR="$BASE_DIR/$LNG/$VRES/$ACT"
 
     normalized_type="${TYPE,,}"
     if [ "$normalized_type" == "movie" ]; then
