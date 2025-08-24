@@ -5,7 +5,7 @@ TOPIC="vsong"
 BROKER="localhost"   # change if remote broker
 LOGFILE="/home/shared/logs/vsongs.log"
 TMPDIR="/tmp/songs"
-BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"  # change to your target directory
+BASE_DIR="/media/zbox/Crucial-X6/ShareMe/media/songs/target"  # change to your target directory
 BASE_MOVIE_DIR="/media/data/storage/ShareMe/media/movies"
 # BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"
 SLACK_WEBHOOK_URL="https://hooks.slack.com/services/xxxx"  # replace with your webhook
@@ -58,9 +58,10 @@ echo "$messages" | while read -r msg; do
         FVCODE=399  # default to 1080p
     fi
 
-    FACODE=140  # m4a audio
-    # FORMAT="${FVCODE}+${FACODE}"
-    FORMAT="bestvideo[height<=${RES}]+bestaudio[ext=m4a]/mp4"
+    FACODE=`yt-dlp -F "https://www.youtube.com/watch?v=-4AN2MMkeFA" |grep m4a | tail -1 |cut -d " " -f 1`
+    FVCODE=`yt-dlp -F "https://www.youtube.com/watch?v=-4AN2MMkeFA" |grep 1080 | tail -1 |cut -d " " -f 1`
+    FORMAT="${FVCODE}+${FACODE}"
+    # FORMAT="bestvideo[height<=${RES}]+bestaudio[ext=m4a]/mp4"
 
     # Download
     start_time=$(date +%s)
