@@ -203,6 +203,11 @@
     <h2>Send Video Info via MQTT</h2>
     <div style="margin-bottom: 10px;">
       <div style="display: flex; gap: 8px; align-items: center;">
+        <label><input type="radio" name="contentType" value="song" checked> song </label>
+        <label><input type="radio" name="contentType" value="movie"> movie </label>
+        <label><input type="radio" name="contentType" value="show"> show </label>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
         <input type="text" id="actorInput" class="actor-input" placeholder="Enter actor name">
         <select id="resolutionSelect" class="resolution-select" title="Select resolution">
           <option value="2160">2160</option>
@@ -211,7 +216,7 @@
         </select>
       </div>
       <div style="display: flex; gap: 5px;">
-        <input type="text" class="override-input" id="ollamaModel" value="qwen3:latest" placeholder="ollamaModel">
+        <input type="text" class="override-input" id="ollamaModel" value="gemma3:latest" placeholder="ollamaModel">
         <input type="text" class="override-input" id="ollamaHostPort" value="localhost:11434" placeholder="ollamaHost:port">
       </div>
       <div style="display: flex; gap: 5px;">

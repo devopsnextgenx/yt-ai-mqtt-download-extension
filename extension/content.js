@@ -27,10 +27,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       let videoQualityInfo = '';
       
       // Get video element dimensions if available
-      let maxResolution = '';
+      let resolution = '';
       if (videoElement) {
         videoQualityInfo = `Video dimensions: ${videoElement.videoWidth}x${videoElement.videoHeight}`;
-        maxResolution = `${videoElement.videoHeight}`;
+        resolution = `${videoElement.videoHeight}`;
       }
       
       // Try to get quality settings from YouTube player
@@ -54,9 +54,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Determine content type
       let contentType = 'Other';
       if (isMovie) {
-        contentType = 'Movie';
+        contentType = 'movie';
       } else if (isActor) {
-        contentType = 'Actor';
+        contentType = 'song';
       }
 
       const videoData = {
@@ -68,7 +68,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         viewCount: viewCount,
         uploadDate: uploadDate,
         contentType: contentType,
-        maxResolution: maxResolution, // Add the max resolution to the response
+        resolution: resolution, // Add the max resolution to the response
         videoQualityInfo: videoQualityInfo,
         extractedAt: new Date().toISOString(),
       };

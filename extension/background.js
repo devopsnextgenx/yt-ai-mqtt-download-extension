@@ -200,7 +200,8 @@ Video Data:
 Title: ${extract.title}
 Description: ${extract.description}
 Channel: ${extract.channelName}
-Resolution: ${extract.overrideResolution || extract.maxResolution}
+Resolution: ${![720, 1080, 1440, 2160].includes(extract.resolution) ? extract.resolution : extract.overrideResolution}
+Type: ${extract.overrideContentType || 'song'}
 Duration: ${extract.duration}
 URL: ${extract.url}
 Actor Override: ${extract.overrideActor || 'None'}
@@ -209,12 +210,12 @@ Please extract the following information and return ONLY a valid JSON object wit
 - LNG: Primary language of the video/movie/song (like "English", "South", "Hindi", "Marathi", "Bhojpuri", etc.)
 - ACT: Main female actor/celebrity name only if mentioned (or "Unknown" if none found), If Actor Override is provided, use that value
 - MP4URL: The YouTube video URL provided
-- RES: Estimated video resolution based on video quality indicators (720, 1080, 1440, or 2160) Use 1080 if unsure, if maxResolution is available use exact or closest higher value
-- TYPE: Can be SONG or MOVIE based on duration if Duration < 10min then SONG else MOVIE
+- RES: Use Resolution value
+- TYPE: Can be song, movie or science based on duration if Duration < 10min then song else movie
 Important: Return ONLY the JSON object, no additional text or explanation.
 
 Example format:
-{"LNG": "English", "ACT": "Tom Hanks", "MP4URL": "https://youtube.com/watch?v=xyz", "RES": 1080}`;
+{"LNG": "English", "ACT": "Tom Hanks", "MP4URL": "https://youtube.com/watch?v=xyz", "RES": 1080, "TYPE": "movie"}`;
 
     console.log("📝 [DEBUG] Ollama prompt created, length:", prompt.length, "characters");
     console.log("🌐 [DEBUG] Making HTTP request to Ollama API:", `http://${ollamaHostPort}/api/generate`);
@@ -412,7 +413,7 @@ Example format:
     console.log("📋 [FALLBACK] Original video data for reference:");
     console.log("  📺 Title:", videoData.title);
     console.log("  📺 Channel:", videoData.channelName);
-    console.log("  📺 Resolution:", videoData.maxResolution);
+    console.log("  📺 Resolution:", videoData.resolution);
     console.log("  📺 URL:", videoData.url);
     console.log("💡 [TROUBLESHOOT] To fix Ollama issues:");
     console.log("  1. Ensure Ollama is running: 'ollama serve'");
@@ -438,7 +439,7 @@ let useWebSocket = true; // Force WebSocket connection for browser compatibility
 
 // === OLLAMA CONFIGURATION ===
 let ollamaHostPort = 'localhost:11434'; // Ollama API endpoint
-let ollamaModelx = 'qwen3:latest'; // Default Ollama model (change as needed)
+let ollamaModelx = 'gemma3:latest'; // Default Ollama model (change as needed)
 // =====================
 
 function setConfig({ mTopic, mqttHost, mqttPort, ollamaHost, ollamaPort, ollamaModel }) {

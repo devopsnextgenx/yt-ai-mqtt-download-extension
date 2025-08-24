@@ -13,7 +13,8 @@ function switchTab(tabId) {
 }
 
 let overrideActor = '';
-let overrideResolution = ''; // Default resolution 
+let overrideResolution = ''; // Default resolution
+let overrideContentType = 'song'; // Default content type
 document.getElementById('sendButton').addEventListener('click', async () => {
   const statusDiv = document.getElementById('status');
   const extractedDataDiv = document.getElementById('extractedData');
@@ -111,7 +112,7 @@ document.getElementById('sendButton').addEventListener('click', async () => {
         chrome.runtime.sendMessage({
           action: "sendMqttMessage",
           data: {
-            extract: {...response.data, overrideActor, overrideResolution},
+            extract: {...response.data, overrideActor, overrideResolution, overrideContentType},
             config: {
               mTopic: mTopic,
               mqttHost: mqttConfig.host,
