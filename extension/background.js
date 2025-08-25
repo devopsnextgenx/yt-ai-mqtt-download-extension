@@ -208,7 +208,7 @@ Actor Override: ${extract.overrideActor || 'None'}
 
 Please extract the following information and return ONLY a valid JSON object with these exact keys:
 - LNG: Primary language of the video/movie/song (like "English", "South", "Hindi", "Marathi", "Bhojpuri", etc.)
-- ACT: Main female actor/celebrity name only if mentioned (or "Unknown" if none found), If Actor Override is provided, use that value
+- ACT: Use Actor Override if provided, else extract female actor/celebrity name from title/description 
 - MP4URL: The YouTube video URL provided
 - RES: Use Resolution value
 - TYPE: Can be song, movie or science based on duration if Duration < 10min then song else movie
