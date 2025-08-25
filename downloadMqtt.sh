@@ -5,9 +5,8 @@ TOPIC="vsong"
 BROKER="localhost"   # change if remote broker
 LOGFILE="/home/shared/logs/vsongs.log"
 TMPDIR="/tmp/songs"
-# BASE_DIR="/media/zbox/Crucial-X6/ShareMe/media/songs/target"  # change to your target directory
-# BASE_MOVIE_DIR="/media/zbox/storage/ShareMe/media/movies"
-BASE_DIR="/media/data/Crucial-X6/ShareMe/media/songs/target"
+BASE_DIR=$(grep '^BASE_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
+BASE_MOVIE_DIR=$(grep '^BASE_MOVIE_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
 # Read SLACK_WEBHOOK_URL from secret file
 SLACK_WEBHOOK_URL=$(grep '^SLACK_WEBHOOK_URL=' /home/shared/.secrets | cut -d'=' -f2-)
 
