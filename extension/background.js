@@ -212,10 +212,11 @@ Please extract the following information and return ONLY a valid JSON object wit
 - MP4URL: The YouTube video URL provided
 - RES: Use Resolution value
 - TYPE: Can be song, movie or science based on duration if Duration < 10min then song else movie
+- TITLE: The original video title for reference, if Movie, use Title and Description to extract actual movie name and use "MovieName (Year)"
 Important: Return ONLY the JSON object, no additional text or explanation.
 
 Example format:
-{"LNG": "English", "ACT": "Tom Hanks", "MP4URL": "https://youtube.com/watch?v=xyz", "RES": 1080, "TYPE": "movie"}`;
+{"LNG": "English", "ACT": "Tom Hanks", "MP4URL": "https://youtube.com/watch?v=xyz", "RES": 1080, "TYPE": "movie", TITLE: "Forrest Gump (1994)"}`;
 
     console.log("📝 [DEBUG] Ollama prompt created, length:", prompt.length, "characters");
     console.log("🌐 [DEBUG] Making HTTP request to Ollama API:", `http://${ollamaHostPort}/api/generate`);
@@ -337,12 +338,13 @@ Example format:
       console.log("🔄 [DEBUG] Adding default values for missing keys...");
       
       extractedData = {
+        ...extractedData,
         LNG: extractedData.LNG || "English", // Default to English
         ACT: extractedData.ACT || "Unknown", 
         MP4URL: extractedData.MP4URL || videoData.url,
         RES: extractedData.RES || 1080,
         TYPE: extractedData.TYPE,
-        ...extractedData // Keep any additional data
+        TITLE: extract.title
       };
       console.log("✅ [DEBUG] Fixed extracted data with defaults:", extractedData);
     }
@@ -354,7 +356,7 @@ Example format:
       MP4URL: extractedData.MP4URL,
       RES: extractedData.RES,
       TYPE: extractedData.TYPE,
-      TITLE: extract.title
+      TITLE: extractedData.TITLE
     };
 
     console.log("🎉 [SUCCESS] Ollama processing completed successfully!");
