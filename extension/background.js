@@ -474,8 +474,87 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.log("⚙️ [DEBUG] Updated config from message:", request.data.config);
     }
 
-  if (request.action === "sendMqttMessage") {
-    console.log("🎯 [DEBUG] Processing sendMqttMessage action");
+  if (request.action === "processWithAI") {
+    console.log("🎯 [DEBUG] Processing processWithAI action");
+    
+    // Process the data with Ollama only
+    console.log("🚀 [DEBUG] Starting Ollama AI processing...");
+    console.log("📊 [DEBUG] Data to process:", JSON.stringify(request.data, null, 2));
+    
+    // Accept config overrides if provided
+    if (request?.data?.config) {
+      setConfig(request.data.config);
+      console.log("⚙️ [DEBUG] Updated config from AI processing message:", request.data.config);
+    }
+    
+    processVideoDataWithOllama(request.data).then((processedData) => {
+      console.log("✅ [SUCCESS] Ollama AI processing completed successfully!");
+      console.log("📊 [SUCCESS] Processed data from Ollama:", JSON.stringify(processedData, null, 2));
+      sendResponse({ 
+        status: "success", 
+        message: "AI processing completed successfully",
+        processedData: processedData
+      });
+    }).catch((error) => {
+      console.error("❌ [ERROR] AI processing failed:");
+      console.error("🔍 [ERROR] Processing error:", error.message);
+      sendResponse({ 
+        status: "failure", 
+        message: error.message,
+        errorCode: error.code || 'AI_PROCESSING_ERROR',
+        details: error.details || 'AI processing failed'
+      });
+    });
+    
+    // Return true to indicate we will send a response asynchronously
+    console.log("🔄 [DEBUG] Returning true for asynchronous AI processing response");
+    return true;
+  } else if (request.action === "sendMqttMessage") {
+    console.log("🎯 [DEBUG] Processing sendMqttMessage action (final data only)");
+    
+    // Check if the configuration is set
+    if (mqttBrokerHost === 'YOUR_MQTT_BROKER_HOST') {
+      console.warn("⚠️ [DEBUG] MQTT broker host not configured!");
+      sendResponse({ status: "failure", message: "Please configure your MQTT broker host in background.js" });
+      return false;
+    }
+    
+    // Accept config overrides if provided  
+    if (request?.data?.config) {
+      setConfig(request.data.config);
+      console.log("⚙️ [DEBUG] Updated config from MQTT message:", request.data.config);
+    }
+    
+    // Send the final data directly via MQTT (no Ollama processing)
+    console.log("🚀 [DEBUG] Sending final JSON data via MQTT...");
+    console.log("📊 [DEBUG] Final data to send:", JSON.stringify(request.data.finalData, null, 2));
+    
+    ensureMqttLibraryLoaded().then(() => {
+      console.log("✅ [DEBUG] MQTT library loaded, sending message...");
+      return sendMqttMessage(request.data.finalData);
+    }).then((result) => {
+      console.log("✅ [SUCCESS] MQTT message sent successfully!");
+      sendResponse({ 
+        status: "success", 
+        message: "MQTT message sent successfully",
+        details: result
+      });
+    }).catch((error) => {
+      console.error("❌ [ERROR] MQTT send failed:");
+      console.error("🔍 [ERROR] MQTT error:", error.message);
+      sendResponse({ 
+        status: "failure", 
+        message: error.message,
+        errorCode: error.code || 'MQTT_SEND_ERROR',
+        details: error.details || 'MQTT send failed'
+      });
+    });
+    
+    // Return true to indicate we will send a response asynchronously
+    console.log("🔄 [DEBUG] Returning true for asynchronous MQTT response");
+    return true;
+  } else if (request.action === "legacySendMqttMessage") {
+    console.log("🎯 [DEBUG] Processing legacy sendMqttMessage action (full pipeline)");
     
     // Check if the configuration is set
     if (mqttBrokerHost === 'YOUR_MQTT_BROKER_HOST') {
@@ -519,10 +598,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         details: error.details || 'No additional details available'
       });
     });
-    
-    // Return true to indicate we will send a response asynchronously
-    console.log("🔄 [DEBUG] Returning true for asynchronous response");
-    return true;
   } else if (request.action === "getBrokerInfo") {
     // Action to get broker and Ollama configuration info
     console.log("📋 [DEBUG] Providing broker and Ollama configuration info");

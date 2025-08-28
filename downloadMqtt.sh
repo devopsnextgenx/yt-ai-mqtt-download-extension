@@ -60,19 +60,20 @@ while IFS= read -r msg; do
 
     # Get format codes in one yt-dlp call
     FORMATS=$(yt-dlp -F "$MP4URL")
+    log "$FORMATS"
     FACODE=$(echo "$FORMATS" | grep audio | tail -1 | awk '{print $1}')
     log "FACODE: $FACODE"
     FVCODE=$(echo "$FORMATS" | grep $RES | tail -1 | awk '{print $1}')
     log "FVCODE: $FVCODE"
     FORMAT=$FVCODE+$FACODE
-
+    
     # FORMAT="bestvideo[height<=${RES}]+bestaudio[ext=m4a]/mp4"
 
     # Download
     start_time=$(date +%s)
     log "Downloading: LNG=$LNG, ACT=$ACT, RES=$RES, URL=$MP4URL, FORMAT=$FORMAT"
     
-    yt-dlp -f $FVCODE+$FACODE --merge-output-format mp4 --no-progress -c "$MP4URL" --restrict-filenames -o "$TMPDIR/%(title)s.%(ext)s" >> "$LOGFILE" 2>&1
+    yt-dlp -f "$FVCODE+$FACODE" --merge-output-format mp4 --no-progress -c "$MP4URL" --restrict-filenames -o "$TMPDIR/%(title)s.%(ext)s" >> "$LOGFILE" 2>&1
 
     if [ $? -ne 0 ]; then
         log "Download failed: $MP4URL"
@@ -85,7 +86,6 @@ while IFS= read -r msg; do
     HEIGHT=`ffprobe -v quiet -select_streams v -show_streams "$TMPDIR/$FILE" | grep height |grep -v coded|cut -d "=" -f 2`
 
     VRES="${FVSTORE_MAP[$HEIGHT]}"
-
 
     if [ -z "$VRES" ]; then
         log "Could not determine storage RES for height $HEIGHT. Using original RES $RES."
