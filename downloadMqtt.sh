@@ -1,4 +1,6 @@
 #!/bin/bash
+export PATH=/usr/local/bin:/usr/bin:/bin
+export HOME=/home/admn
 
 # Configuration
 TOPIC="vsong"
@@ -73,7 +75,13 @@ while IFS= read -r msg; do
     start_time=$(date +%s)
     log "Downloading: LNG=$LNG, ACT=$ACT, RES=$RES, URL=$MP4URL, FORMAT=$FORMAT"
     
-    yt-dlp -f "$FVCODE+$FACODE" --merge-output-format mp4 --no-progress -c "$MP4URL" --restrict-filenames -o "$TMPDIR/%(title)s.%(ext)s" >> "$LOGFILE" 2>&1
+    sudo -u admn yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36" \
+        -f "$FVCODE+$FACODE" \
+        --merge-output-format mp4 \
+        --no-progress \
+        --restrict-filenames \
+        -c -o "$TMPDIR/%(title)s.%(ext)s" \
+        "$MP4URL" >> "$LOGFILE" 2>&1
 
     if [ $? -ne 0 ]; then
         log "Download failed: $MP4URL"
@@ -115,7 +123,7 @@ while IFS= read -r msg; do
     normalized_type="${TYPE,,}"
     if [ "$normalized_type" == "movie" ]; then
         LNG="bollywood"
-        if [ "$LNG" = "English" ]; then
+        if [ "$LNG" == "english" ]; then
             LNG="hollywood"
         fi
         TARGET_DIR="$BASE_MOVIE_DIR/$LNG"
