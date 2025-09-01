@@ -186,6 +186,7 @@ mosquitto_pub -h localhost -t "vsong" -n -r
 log "Finished processing batch. Total successful downloads: $count, failed: $failed_count"
 log "Summary:\n$summary"
 
+rm -rf "$TMPDIR"
 # Notify Slack after batch if any downloads succeeded or failed
 if [ "$count" -gt 0 ] || [ "$failed_count" -gt 0 ]; then
     slack_msg="✅ Batch Download Complete: $count file(s)\n\n$summary"
