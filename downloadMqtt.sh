@@ -29,6 +29,7 @@ messages=$(timeout 10s mosquitto_sub -h "$BROKER" -t "$TOPIC"  -q 1 -c -i downlo
 
 if [ -z "$messages" ]; then
     log "No messages received from MQTT."
+    rm -rf "$TMPDIR"
     exit 0
 fi
 
