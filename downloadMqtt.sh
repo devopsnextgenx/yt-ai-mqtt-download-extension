@@ -7,7 +7,7 @@ TOPIC="vsong"
 BROKER="localhost"   # change if remote broker
 LOGFILE="/home/shared/logs/vsongs.log"
 TMPDIR="/tmp/songs"
-BASE_DIR=$(grep '^BASE_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
+BASE_SONG_DIR=$(grep '^BASE_SONG_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
 BASE_MOVIE_DIR=$(grep '^BASE_MOVIE_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
 # Read SLACK_WEBHOOK_URL from secret file
 SLACK_WEBHOOK_URL=$(grep '^SLACK_WEBHOOK_URL=' /home/shared/.secrets | cut -d'=' -f2-)
@@ -34,7 +34,9 @@ log "Received messages: $(echo "$messages" | wc -l)"
 
 # Prepare summary
 summary=""
+failed_summary=""
 count=0
+failed_count=0
 
 # Process each JSON message
 while IFS= read -r msg; do
@@ -49,8 +51,12 @@ while IFS= read -r msg; do
     # Validate
     if [ -z "$LNG" ] || [ -z "$ACT" ] || [ -z "$RES" ] || [ -z "$MP4URL" ]; then
         log "Invalid message: $msg"
+        failed_summary="${failed_summary}\n❌ Invalid message: $msg"
+        failed_summary="${failed_summary}\n========================================================================\n"
+        failed_count=$((failed_count+1))
         continue
     fi
+
     
 
     # Format string
@@ -85,6 +91,9 @@ while IFS= read -r msg; do
 
     if [ $? -ne 0 ]; then
         log "Download failed: $MP4URL"
+        failed_summary="${failed_summary}\n❌ URL: $MP4URL\nReason: Download failed\n"
+        failed_summary="${failed_summary}\n========================================================================\n"
+        failed_count=$((failed_count+1))
         continue
     fi
 
@@ -118,7 +127,7 @@ while IFS= read -r msg; do
             ;;
     esac
     # Paths
-    TARGET_DIR="$BASE_DIR/$LNG/$VRES/$ACT"
+    TARGET_DIR="$BASE_SONG_DIR/$LNG/$VRES/$ACT"
 
     normalized_type="${TYPE,,}"
     if [ "$normalized_type" == "movie" ]; then
@@ -152,12 +161,17 @@ done <<< "$messages"
 
 mosquitto_pub -h localhost -t "vsong" -n -r
 
-log "Finished processing batch. Total successful downloads: $count"
+log "Finished processing batch. Total successful downloads: $count, failed: $failed_count"
 log "Summary:\n$summary"
+log "Failed Summary:\n$failed_summary"
 
-# Notify Slack after batch if any downloads succeeded
-if [ "$count" -gt 0 ]; then
+# Notify Slack after batch if any downloads succeeded or failed
+if [ "$count" -gt 0 ] || [ "$failed_count" -gt 0 ]; then
+    slack_msg="✅ Batch Download Complete: $count file(s)\n\n$summary"
+    if [ "$failed_count" -gt 0 ]; then
+        slack_msg="${slack_msg}\n❌ Failed Downloads: $failed_count\n$failed_summary"
+    fi
     curl -X POST -H 'Content-type: application/json' \
-        --data "{\"text\":\"✅ Batch Download Complete: $count file(s)\n\n$summary\"}" \
+        --data "{\"text\":\"$slack_msg\"}" \
         "$SLACK_WEBHOOK_URL"
 fi
