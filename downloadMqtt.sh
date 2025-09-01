@@ -7,12 +7,13 @@ TOPIC="vsong"
 BROKER="localhost"   # change if remote broker
 LOGFILE="/home/shared/logs/vsongs.log"
 FAILED_MSG_LOG="/home/shared/logs/failed-msg.txt"
-TMPDIR="/tmp/songs"
 BASE_SONG_DIR=$(grep '^BASE_SONG_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
 BASE_MOVIE_DIR=$(grep '^BASE_MOVIE_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
 # Read SLACK_WEBHOOK_URL from secret file
 SLACK_WEBHOOK_URL=$(grep '^SLACK_WEBHOOK_URL=' /home/shared/.secrets | cut -d'=' -f2-)
 
+timestamp=$(date '+%Y%m%d%H%M%S')
+TMPDIR="/tmp/songs/$timestamp"
 mkdir -p "$TMPDIR"
 
 # Function: log
