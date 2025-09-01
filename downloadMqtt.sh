@@ -58,7 +58,7 @@ while IFS= read -r msg; do
         # Increment RETRY and resend if less than 5, else log to FAILED_MSG_LOG
         RETRY=$((RETRY + 1))
         if [ "$RETRY" -lt 5 ]; then
-            new_msg=$(echo "$msg" | jq --argjson retry "$RETRY" '.RETRY = $retry')
+            new_msg=$(echo "$msg" | jq -c --argjson retry "$RETRY" '.RETRY = $retry')
             mosquitto_pub -h "$BROKER" -t "$TOPIC" -m "$new_msg" -q 1
             log "Resent invalid message with RETRY=$RETRY"
         else
@@ -107,7 +107,7 @@ while IFS= read -r msg; do
         # Increment RETRY and resend if less than 5, else log to FAILED_MSG_LOG
         RETRY=$((RETRY + 1))
         if [ "$RETRY" -lt 5 ]; then
-            new_msg=$(echo "$msg" | jq --argjson retry "$RETRY" '.RETRY = $retry')
+            new_msg=$(echo "$msg" | jq -c --argjson retry "$RETRY" '.RETRY = $retry')
             mosquitto_pub -h "$BROKER" -t "$TOPIC" -m "$new_msg" -q 1
             log "Resent failed message with RETRY=$RETRY"
         else
