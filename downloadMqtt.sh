@@ -44,17 +44,27 @@ while IFS= read -r msg; do
     [ -z "$msg" ] && continue
     log "Processing message: $msg"
     LNG=$(echo "$msg" | jq -r '.LNG')
+    TITLE=$(echo "$msg" | jq -r '.TITLE')
     ACT=$(echo "$msg" | jq -r '.ACT')
     RES=$(echo "$msg" | jq -r '.RES') # 2160/1440/1080/720
     MP4URL=$(echo "$msg" | jq -r '.MP4URL')
     TYPE=$(echo "$msg" | jq -r '.TYPE')
+    RETRY=$(echo "$msg" | jq -r '.RETRY // 0')
 
     # Validate
     if [ -z "$LNG" ] || [ -z "$ACT" ] || [ -z "$RES" ] || [ -z "$MP4URL" ]; then
         log "Invalid message: $msg"
         failed_summary="${failed_summary}\n❌ Invalid message: $msg"
-        failed_summary="${failed_summary}\n========================================================================\n"
-        echo "$msg" >> $FAILED_MSG_LOG   # <-- Add this line
+        # Increment RETRY and resend if less than 5, else log to FAILED_MSG_LOG
+        RETRY=$((RETRY + 1))
+        if [ "$RETRY" -lt 5 ]; then
+            new_msg=$(echo "$msg" | jq --argjson retry "$RETRY" '.RETRY = $retry')
+            mosquitto_pub -h "$BROKER" -t "$TOPIC" -m "$new_msg" -q 1
+            log "Resent invalid message with RETRY=$RETRY"
+        else
+            echo "$msg" >> $FAILED_MSG_LOG
+            log "Message failed after 5 retries, added to FAILED_MSG_LOG"
+        fi
         failed_count=$((failed_count+1))
         continue
     fi
@@ -93,10 +103,17 @@ while IFS= read -r msg; do
 
     if [ $? -ne 0 ]; then
         log "Download failed: $MP4URL"
-        failed_summary="${failed_summary}\n❌ URL: $MP4URL\nReason: Download failed\n"
-        failed_summary="${failed_summary}\n========================================================================\n"
-        echo "$msg" >> $FAILED_MSG_LOG   # <-- Add this line
-        failed_count=$((failed_count+1))
+        failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nReason: Download failed\n"
+        # Increment RETRY and resend if less than 5, else log to FAILED_MSG_LOG
+        RETRY=$((RETRY + 1))
+        if [ "$RETRY" -lt 5 ]; then
+            new_msg=$(echo "$msg" | jq --argjson retry "$RETRY" '.RETRY = $retry')
+            mosquitto_pub -h "$BROKER" -t "$TOPIC" -m "$new_msg" -q 1
+            log "Resent failed message with RETRY=$RETRY"
+        else
+            echo "$msg" >> $FAILED_MSG_LOG
+            log "Message failed after 5 retries, added to FAILED_MSG_LOG"
+        fi
         continue
     fi
 
@@ -166,13 +183,14 @@ mosquitto_pub -h localhost -t "vsong" -n -r
 
 log "Finished processing batch. Total successful downloads: $count, failed: $failed_count"
 log "Summary:\n$summary"
-log "Failed Summary:\n$failed_summary"
 
 # Notify Slack after batch if any downloads succeeded or failed
 if [ "$count" -gt 0 ] || [ "$failed_count" -gt 0 ]; then
     slack_msg="✅ Batch Download Complete: $count file(s)\n\n$summary"
     if [ "$failed_count" -gt 0 ]; then
-        slack_msg="${slack_msg}\n❌ Failed Downloads: $failed_count\n$failed_summary"
+        failed_summary="\n========================================================================\n❌ Failed Downloads: $failed_count\n${failed_summary}\n========================================================================\n"
+        slack_msg="${slack_msg}$failed_summary"
+        log "Failed Summary:\n$failed_summary"
     fi
     curl -X POST -H 'Content-type: application/json' \
         --data "{\"text\":\"$slack_msg\"}" \
