@@ -6,6 +6,7 @@ export HOME=/home/admn
 TOPIC="vsong"
 BROKER="localhost"   # change if remote broker
 LOGFILE="/home/shared/logs/vsongs.log"
+FAILED_MSG_LOG="/home/shared/logs/failed-msg.txt"
 TMPDIR="/tmp/songs"
 BASE_SONG_DIR=$(grep '^BASE_SONG_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
 BASE_MOVIE_DIR=$(grep '^BASE_MOVIE_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
@@ -53,6 +54,7 @@ while IFS= read -r msg; do
         log "Invalid message: $msg"
         failed_summary="${failed_summary}\n❌ Invalid message: $msg"
         failed_summary="${failed_summary}\n========================================================================\n"
+        echo "$msg" >> $FAILED_MSG_LOG   # <-- Add this line
         failed_count=$((failed_count+1))
         continue
     fi
@@ -93,6 +95,7 @@ while IFS= read -r msg; do
         log "Download failed: $MP4URL"
         failed_summary="${failed_summary}\n❌ URL: $MP4URL\nReason: Download failed\n"
         failed_summary="${failed_summary}\n========================================================================\n"
+        echo "$msg" >> $FAILED_MSG_LOG   # <-- Add this line
         failed_count=$((failed_count+1))
         continue
     fi
