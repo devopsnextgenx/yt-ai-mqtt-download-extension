@@ -103,7 +103,6 @@ while IFS= read -r msg; do
 
     if [ $? -ne 0 ]; then
         log "Download failed: $MP4URL"
-        failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nReason: Download failed\n"
         # Increment RETRY and resend if less than 5, else log to FAILED_MSG_LOG
         RETRY=$((RETRY + 1))
         if [ "$RETRY" -lt 5 ]; then
@@ -114,6 +113,7 @@ while IFS= read -r msg; do
             echo "$msg" >> $FAILED_MSG_LOG
             log "Message failed after 5 retries, added to FAILED_MSG_LOG"
         fi
+        failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nRETRY: $RETRY\nReason: Download failed\n"
         failed_count=$((failed_count+1))
         continue
     fi
