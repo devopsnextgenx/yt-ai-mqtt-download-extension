@@ -114,6 +114,7 @@ while IFS= read -r msg; do
             echo "$msg" >> $FAILED_MSG_LOG
             log "Message failed after 5 retries, added to FAILED_MSG_LOG"
         fi
+        failed_count=$((failed_count+1))
         continue
     fi
 
