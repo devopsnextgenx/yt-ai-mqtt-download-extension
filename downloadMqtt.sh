@@ -95,9 +95,10 @@ while IFS= read -r msg; do
     
     sudo -u admn yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36" \
         -f "$FVCODE+$FACODE" \
-        --merge-output-format mp4 \
         --no-progress \
         --restrict-filenames \
+        --embed-thumbnail \
+        # --merge-output-format mp4 \
         -c -o "$TMPDIR/%(title)s.%(ext)s" \
         "$MP4URL" >> "$LOGFILE" 2>&1
 
@@ -121,6 +122,9 @@ while IFS= read -r msg; do
     # Find most recent file
     FILE=$(ls -t "$TMPDIR" | head -1)
     SRC="$TMPDIR/$FILE"
+    ffmpeg -i "$TMPDIR/$FILE" -c copy -metadata source_url="$MP4URL" "$TMPDIR/medata-$FILE"
+    mv "$TMPDIR/medata-$FILE" "$TMPDIR/$FILE"
+
     HEIGHT=`ffprobe -v quiet -select_streams v -show_streams "$TMPDIR/$FILE" | grep height |grep -v coded|cut -d "=" -f 2`
 
     VRES="${FVSTORE_MAP[$HEIGHT]}"
