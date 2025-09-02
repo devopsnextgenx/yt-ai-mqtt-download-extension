@@ -98,7 +98,7 @@ while IFS= read -r msg; do
         --no-progress \
         --restrict-filenames \
         --embed-thumbnail \
-        # --merge-output-format mp4 \
+        --merge-output-format mp4 \
         -c -o "$TMPDIR/%(title)s.%(ext)s" \
         "$MP4URL" >> "$LOGFILE" 2>&1
 
