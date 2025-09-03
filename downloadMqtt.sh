@@ -86,7 +86,7 @@ while IFS= read -r msg; do
         log "Video ID: $VIDEO_ID"
         echo "$FORMATS" > "$LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
         log "Saved formats: cat $LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
-        failed_summary="${failed_summary}\n⚠️ URL: $MP4URL\nTITLE: $TITLE\n*Reason: Could not find format codes for RES $RES or audio.*"
+        failed_summary="${failed_summary}\n⚠️ URL: $MP4URL\nTITLE: $TITLE\n``Reason: Could not find format codes for RES $RES or audio.``"
         failed_count=$((failed_count+1))
         continue
     fi
@@ -120,7 +120,7 @@ while IFS= read -r msg; do
         else
             echo "$msg" >> $FAILED_MSG_LOG
             log "Message failed after 5 retries, added to FAILED_MSG_LOG"
-            failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nRETRY: $RETRY\n*🔴 Reason: Download failed*\n"
+            failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nRETRY: $RETRY\n``🔴 Reason: Download failed``\n"
             failed_count=$((failed_count+1))
         fi
         continue
