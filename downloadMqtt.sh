@@ -86,7 +86,7 @@ while IFS= read -r msg; do
         log "Video ID: $VIDEO_ID"
         echo "$FORMATS" >> "$LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
         log "Saved formats: cat $LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
-        failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nReason: Could not find format codes for RES $RES or audio."
+        failed_summary="${failed_summary}\n⚠️ URL: $MP4URL\nTITLE: $TITLE\n*Reason: Could not find format codes for RES $RES or audio.*"
         failed_count=$((failed_count+1))
         continue
     fi
@@ -120,7 +120,7 @@ while IFS= read -r msg; do
         else
             echo "$msg" >> $FAILED_MSG_LOG
             log "Message failed after 5 retries, added to FAILED_MSG_LOG"
-            failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nRETRY: $RETRY\nReason: Download failed\n"
+            failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nRETRY: $RETRY\n*🔴 Reason: Download failed*\n"
             failed_count=$((failed_count+1))
         fi
         continue
@@ -185,7 +185,7 @@ while IFS= read -r msg; do
     log "Downloaded: $DEST ($filesize in ${elapsed}s)"
     # Append to summary
     summary="${summary}\n✅ URL: $MP4URL\nPath: $DEST\nSize: $filesize (Time: ${elapsed}s)\n"
-    summary="${summary}\n========================================================================\n"
+    summary="${summary}\n===================================\n"
     log "$summary"
     count=$((count+1))
 
@@ -201,12 +201,12 @@ rm -rf "$TMPDIR"
 if [ "$count" -gt 0 ] || [ "$failed_count" -gt 0 ]; then
     slack_msg="✅ Batch Download Complete: $count file(s)\n\n$summary"
     if [ "$retry_count" -gt 0 ]; then
-        retry_summary="\n========================================================================\n🔄 Retried Downloads: $retry_count\n${retry_summary}\n========================================================================\n"
+        retry_summary="\n===================================\n🔄 Retried Downloads: $retry_count\n${retry_summary}\n===================================\n"
         slack_msg="${slack_msg}$retry_summary"
         log "Retry Summary:\n$retry_summary"
     fi
     if [ "$failed_count" -gt 0 ]; then
-        failed_summary="\n========================================================================\n❌ Failed Downloads: $failed_count\n${failed_summary}\n========================================================================\n"
+        failed_summary="\n===================================\n❌ Failed Downloads: $failed_count\n${failed_summary}\n===================================\n"
         slack_msg="${slack_msg}$failed_summary"
         log "Failed Summary:\n$failed_summary"
     fi
