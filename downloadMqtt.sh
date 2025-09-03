@@ -5,8 +5,9 @@ export HOME=/home/admn
 # Configuration
 TOPIC="vsong"
 BROKER="localhost"   # change if remote broker
-LOGFILE="/home/shared/logs/vsongs.log"
-FAILED_MSG_LOG="/home/shared/logs/failed-msg.txt"
+LOGSTORE="/home/shared/logs"
+LOGFILE="$LOGSTORE/vsongs.log"
+FAILED_MSG_LOG="$LOGSTORE/failed-msg.txt"
 BASE_SONG_DIR=$(grep '^BASE_SONG_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
 BASE_MOVIE_DIR=$(grep '^BASE_MOVIE_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
 # Read SLACK_WEBHOOK_URL from secret file
@@ -35,8 +36,10 @@ mkdir -p "$TMPDIR"
 
 # Prepare summary
 summary=""
+retry_summary=""
 failed_summary=""
 count=0
+retry_count=0
 failed_count=0
 
 # Process each JSON message
@@ -55,16 +58,6 @@ while IFS= read -r msg; do
     if [ -z "$LNG" ] || [ -z "$ACT" ] || [ -z "$RES" ] || [ -z "$MP4URL" ]; then
         log "Invalid message: $msg"
         failed_summary="${failed_summary}\n❌ Invalid message: $msg"
-        # Increment RETRY and resend if less than 5, else log to FAILED_MSG_LOG
-        RETRY=$((RETRY + 1))
-        if [ "$RETRY" -lt 5 ]; then
-            new_msg=$(echo "$msg" | jq -c --argjson retry "$RETRY" '.RETRY = $retry')
-            mosquitto_pub -h "$BROKER" -t "$TOPIC" -m "$new_msg" -q 1
-            log "Resent invalid message with RETRY=$RETRY"
-        else
-            echo "$msg" >> $FAILED_MSG_LOG
-            log "Message failed after 5 retries, added to FAILED_MSG_LOG"
-        fi
         failed_count=$((failed_count+1))
         continue
     fi
@@ -75,7 +68,6 @@ while IFS= read -r msg; do
     FVCODE="${FVCODE_MAP[$RES]}"
     if [ -z "$FVCODE" ]; then
         log "Unknown RES '$RES' — cannot determine video format code. Skipping."
-        FVCODE=399  # default to 1080p
     fi
 
     # Get format codes in one yt-dlp call
@@ -86,6 +78,18 @@ while IFS= read -r msg; do
     FVCODE=$(echo "$FORMATS" | grep $RES | tail -1 | awk '{print $1}')
     log "FVCODE: $FVCODE"
     FORMAT=$FVCODE+$FACODE
+
+    if [ -z "$FVCODE" ] || [ -z "$FACODE" ]; then
+        log "Could not find format codes for RES $RES or audio. Skipping download."
+        echo "$msg" >> $FAILED_MSG_LOG
+        VIDEO_ID=$(echo "$MP4URL" | cut -d'=' -f2 | cut -d'&' -f1)
+        log "Video ID: $VIDEO_ID"
+        echo "$FORMATS" >> "$LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
+        log "Saved formats: cat $LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
+        failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nRETRY: $RETRY\nReason: Could not find format codes for RES $RES or audio."
+        failed_count=$((failed_count+1))
+        continue
+    fi
     
     # FORMAT="bestvideo[height<=${RES}]+bestaudio[ext=m4a]/mp4"
 
@@ -111,6 +115,8 @@ while IFS= read -r msg; do
             new_msg=$(echo "$msg" | jq -c --argjson retry "$RETRY" '.RETRY = $retry')
             mosquitto_pub -h "$BROKER" -t "$TOPIC" -m "$new_msg" -q 1
             log "Resent failed message with RETRY=$RETRY"
+            retry_summary="${retry_summary}\n🔄 URL: $MP4URL\nTITLE: $TITLE\nNew RETRY: $RETRY\n"
+            retry_count=$((retry_count+1))
         else
             echo "$msg" >> $FAILED_MSG_LOG
             log "Message failed after 5 retries, added to FAILED_MSG_LOG"
@@ -194,6 +200,11 @@ rm -rf "$TMPDIR"
 # Notify Slack after batch if any downloads succeeded or failed
 if [ "$count" -gt 0 ] || [ "$failed_count" -gt 0 ]; then
     slack_msg="✅ Batch Download Complete: $count file(s)\n\n$summary"
+    if [ "$retry_count" -gt 0 ]; then
+        retry_summary="\n========================================================================\n🔄 Retried Downloads: $retry_count\n${retry_summary}\n========================================================================\n"
+        slack_msg="${slack_msg}$retry_summary"
+        log "Retry Summary:\n$retry_summary"
+    fi
     if [ "$failed_count" -gt 0 ]; then
         failed_summary="\n========================================================================\n❌ Failed Downloads: $failed_count\n${failed_summary}\n========================================================================\n"
         slack_msg="${slack_msg}$failed_summary"
