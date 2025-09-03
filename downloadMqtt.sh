@@ -101,6 +101,7 @@ while IFS= read -r msg; do
         --merge-output-format mp4 \
         -c -o "$TMPDIR/%(title)s.%(ext)s" \
         "$MP4URL" >> "$LOGFILE" 2>&1
+        # --merge-output-format mp4 \
 
     if [ $? -ne 0 ]; then
         log "Download failed: $MP4URL"
@@ -132,15 +133,15 @@ while IFS= read -r msg; do
     if [ -z "$VRES" ]; then
         log "Could not determine storage RES for height $HEIGHT. Using original RES $RES."
         if [ "$RES" -le 720 ]; then
-            VRES=720
+            VRES=720p
         elif [ "$RES" -le 1080 ]; then
-            VRES=1080
+            VRES=1080p
         elif [ "$RES" -le 1440 ]; then
-            VRES=1440
+            VRES=2k
         elif [ "$RES" -le 2160 ]; then
-            VRES=2160
+            VRES=4k
         else
-            VRES=2160
+            VRES=4k
             echo "Warning: RES ($RES) is higher than 2160, setting VRES to 2160"
         fi
     fi
