@@ -84,7 +84,7 @@ while IFS= read -r msg; do
         echo "$msg" >> $FAILED_MSG_LOG
         VIDEO_ID=$(echo "$MP4URL" | cut -d'=' -f2 | cut -d'&' -f1)
         log "Video ID: $VIDEO_ID"
-        echo "$FORMATS" >> "$LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
+        echo "$FORMATS" > "$LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
         log "Saved formats: cat $LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
         failed_summary="${failed_summary}\n⚠️ URL: $MP4URL\nTITLE: $TITLE\n*Reason: Could not find format codes for RES $RES or audio.*"
         failed_count=$((failed_count+1))
