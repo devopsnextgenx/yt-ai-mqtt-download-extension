@@ -86,7 +86,7 @@ while IFS= read -r msg; do
         log "Video ID: $VIDEO_ID"
         echo "$FORMATS" >> "$LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
         log "Saved formats: cat $LOGSTORE/yt-dlp-formats/$VIDEO_ID.txt"
-        failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nRETRY: $RETRY\nReason: Could not find format codes for RES $RES or audio."
+        failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nReason: Could not find format codes for RES $RES or audio."
         failed_count=$((failed_count+1))
         continue
     fi
@@ -115,14 +115,14 @@ while IFS= read -r msg; do
             new_msg=$(echo "$msg" | jq -c --argjson retry "$RETRY" '.RETRY = $retry')
             mosquitto_pub -h "$BROKER" -t "$TOPIC" -m "$new_msg" -q 1
             log "Resent failed message with RETRY=$RETRY"
-            retry_summary="${retry_summary}\n🔄 URL: $MP4URL\nTITLE: $TITLE\nNew RETRY: $RETRY\n"
+            retry_summary="${retry_summary}\n🔄 URL: $MP4URL\nTITLE: $TITLE\nRETRY: $RETRY\n"
             retry_count=$((retry_count+1))
         else
             echo "$msg" >> $FAILED_MSG_LOG
             log "Message failed after 5 retries, added to FAILED_MSG_LOG"
+            failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nRETRY: $RETRY\nReason: Download failed\n"
+            failed_count=$((failed_count+1))
         fi
-        failed_summary="${failed_summary}\n❌ URL: $MP4URL\nTITLE: $TITLE\nRETRY: $RETRY\nReason: Download failed\n"
-        failed_count=$((failed_count+1))
         continue
     fi
 
