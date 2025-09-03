@@ -3,7 +3,7 @@
 TOPIC="vsong"
 BROKER="192.168.12.111"   # change if remote broker
 
-RETRY_FILE="/home/kira/git/devopsnextgenx/yt-ai-mqtt-download-extension/failed-msg.txt"
+RETRY_FILE="/home/kira/git/devopsnextgenx/yt-ai-mqtt-download-extension/failed-msg.jsonl"
 
 if [[ ! -f "$RETRY_FILE" ]]; then
     echo "Retry file not found: $RETRY_FILE"
