@@ -7,7 +7,7 @@ TOPIC="vsong"
 BROKER="localhost"   # change if remote broker
 LOGSTORE="/home/shared/logs"
 LOGFILE="$LOGSTORE/vsongs.log"
-FAILED_MSG_LOG="$LOGSTORE/failed-msg.txt"
+FAILED_MSG_LOG="$LOGSTORE/failed-msg.jsonl"
 BASE_SONG_DIR=$(grep '^BASE_SONG_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
 BASE_MOVIE_DIR=$(grep '^BASE_MOVIE_DIR=' /home/shared/.secrets | cut -d'=' -f2-)
 # Read SLACK_WEBHOOK_URL from secret file
@@ -17,7 +17,9 @@ TMPDIR="/tmp/songs/$timestamp"
 
 # Function: log
 log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOGFILE"
+    local timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+    # Log to file (original behavior)
+    echo -e "$1" | sed 's/\\n/\n/g' | sed "s/^/$timestamp - /" | tee -a "$LOGFILE"
 }
 
 declare -A FVCODE_MAP=( ["2160"]="401" ["1440"]="400" ["1080"]="399" ["720"]="398" )
@@ -71,7 +73,7 @@ while IFS= read -r msg; do
     fi
 
     # Get format codes in one yt-dlp call
-    FORMATS=$(yt-dlp -F "$MP4URL")
+    FORMATS=$(sudo -u admn yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36" --cookies-from-browser chrome -F "$MP4URL")
     log "$FORMATS"
     FACODE=$(echo "$FORMATS" | grep audio | tail -1 | awk '{print $1}')
     log "FACODE: $FACODE"
@@ -98,6 +100,7 @@ while IFS= read -r msg; do
     log "Downloading: LNG=$LNG, ACT=$ACT, RES=$RES, URL=$MP4URL, FORMAT=$FORMAT"
     
     sudo -u admn yt-dlp --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36" \
+        --cookies-from-browser chrome \
         -f "$FVCODE+$FACODE" \
         --no-progress \
         --restrict-filenames \
@@ -198,7 +201,7 @@ log "Summary:\n$summary"
 
 rm -rf "$TMPDIR"
 # Notify Slack after batch if any downloads succeeded or failed
-if [ "$count" -gt 0 ] || [ "$failed_count" -gt 0 ]; then
+if [ "$count" -gt 0 ] || [ "$failed_count" -gt 0 ] || [ "$retry_count" -gt 0 ]; then
     slack_msg="✅ Batch Download Complete: $count file(s)\n\n$summary"
     if [ "$retry_count" -gt 0 ]; then
         retry_summary="\n===================================\n🔄 Retried Downloads: $retry_count\n${retry_summary}\n===================================\n"
@@ -210,7 +213,17 @@ if [ "$count" -gt 0 ] || [ "$failed_count" -gt 0 ]; then
         slack_msg="${slack_msg}$failed_summary"
         log "Failed Summary:\n$failed_summary"
     fi
-    curl -X POST -H 'Content-type: application/json' \
+    log "Sending Slack notification!!!"
+    # Capture curl response and exit code
+    response=$(curl -s -X POST -H 'Content-type: application/json' \
         --data "{\"text\":\"$slack_msg\"}" \
-        "$SLACK_WEBHOOK_URL"
+        "$SLACK_WEBHOOK_URL" 2>&1)
+    curl_exit_code=$?
+
+    # Log the response
+    if [ $curl_exit_code -eq 0 ]; then
+        log "✅ Slack notification sent successfully\nResponse: $response"
+    else
+        log "❌ Slack notification failed (Exit code: \`$curl_exit_code\`)\nResponse: \`$response\`"
+    fi
 fi
