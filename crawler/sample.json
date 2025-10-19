@@ -1,0 +1,233 @@
+{
+  "type": "folder",
+  "url": "http://103.145.232.246/Data/movies/",
+  "children": {
+    "Action": {
+      "type": "folder",
+      "url": "http://103.145.232.246/Data/movies/Action/",
+      "children": {
+        "John Wick (2014)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Action/John%20Wick%20(2014)/",
+          "children": {
+            "John.Wick.2014.1080p.BluRay.x264.mp4": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Action/John%20Wick%20(2014)/John.Wick.2014.1080p.BluRay.x264.mp4",
+              "size": "2.1GB"
+            },
+            "John.Wick.2014.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Action/John%20Wick%20(2014)/John.Wick.2014.srt",
+              "size": "98KB"
+            },
+            "poster.jpg": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Action/John%20Wick%20(2014)/poster.jpg",
+              "size": "156KB"
+            }
+          }
+        },
+        "Mad Max Fury Road (2015)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Action/Mad%20Max%20Fury%20Road%20(2015)/",
+          "children": {
+            "Mad.Max.Fury.Road.2015.1080p.BluRay.x265.mkv": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Action/Mad%20Max%20Fury%20Road%20(2015)/Mad.Max.Fury.Road.2015.1080p.BluRay.x265.mkv",
+              "size": "1.8GB"
+            },
+            "subtitles-en.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Action/Mad%20Max%20Fury%20Road%20(2015)/subtitles-en.srt",
+              "size": "87KB"
+            }
+          }
+        },
+        "The Dark Knight (2008)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Action/The%20Dark%20Knight%20(2008)/",
+          "children": {
+            "The.Dark.Knight.2008.1080p.BluRay.x264.mp4": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Action/The%20Dark%20Knight%20(2008)/The.Dark.Knight.2008.1080p.BluRay.x264.mp4",
+              "size": "2.5GB"
+            },
+            "The.Dark.Knight.2008.en.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Action/The%20Dark%20Knight%20(2008)/The.Dark.Knight.2008.en.srt",
+              "size": "112KB"
+            }
+          }
+        }
+      }
+    },
+    "Comedy": {
+      "type": "folder",
+      "url": "http://103.145.232.246/Data/movies/Comedy/",
+      "children": {
+        "Superbad (2007)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Comedy/Superbad%20(2007)/",
+          "children": {
+            "Superbad.2007.720p.BluRay.x264.mp4": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Comedy/Superbad%20(2007)/Superbad.2007.720p.BluRay.x264.mp4",
+              "size": "1.2GB"
+            },
+            "Superbad.2007.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Comedy/Superbad%20(2007)/Superbad.2007.srt",
+              "size": "76KB"
+            }
+          }
+        },
+        "The Grand Budapest Hotel (2014)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Comedy/The%20Grand%20Budapest%20Hotel%20(2014)/",
+          "children": {
+            "The.Grand.Budapest.Hotel.2014.1080p.BluRay.x265.mkv": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Comedy/The%20Grand%20Budapest%20Hotel%20(2014)/The.Grand.Budapest.Hotel.2014.1080p.BluRay.x265.mkv",
+              "size": "1.6GB"
+            }
+          }
+        }
+      }
+    },
+    "Drama": {
+      "type": "folder",
+      "url": "http://103.145.232.246/Data/movies/Drama/",
+      "children": {
+        "The Shawshank Redemption (1994)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Drama/The%20Shawshank%20Redemption%20(1994)/",
+          "children": {
+            "The.Shawshank.Redemption.1994.1080p.BluRay.x264.mp4": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Drama/The%20Shawshank%20Redemption%20(1994)/The.Shawshank.Redemption.1994.1080p.BluRay.x264.mp4",
+              "size": "2.3GB"
+            },
+            "The.Shawshank.Redemption.1994.en.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Drama/The%20Shawshank%20Redemption%20(1994)/The.Shawshank.Redemption.1994.en.srt",
+              "size": "95KB"
+            },
+            "cover.jpg": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Drama/The%20Shawshank%20Redemption%20(1994)/cover.jpg",
+              "size": "203KB"
+            }
+          }
+        },
+        "Forrest Gump (1994)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Drama/Forrest%20Gump%20(1994)/",
+          "children": {
+            "Forrest.Gump.1994.1080p.BluRay.x264.mkv": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Drama/Forrest%20Gump%20(1994)/Forrest.Gump.1994.1080p.BluRay.x264.mkv",
+              "size": "2.4GB"
+            },
+            "Forrest.Gump.1994.en.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Drama/Forrest%20Gump%20(1994)/Forrest.Gump.1994.en.srt",
+              "size": "102KB"
+            }
+          }
+        }
+      }
+    },
+    "Sci-Fi": {
+      "type": "folder",
+      "url": "http://103.145.232.246/Data/movies/Sci-Fi/",
+      "children": {
+        "Inception (2010)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Sci-Fi/Inception%20(2010)/",
+          "children": {
+            "Inception.2010.1080p.BluRay.x264.mp4": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Sci-Fi/Inception%20(2010)/Inception.2010.1080p.BluRay.x264.mp4",
+              "size": "2.7GB"
+            },
+            "Inception.2010.en.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Sci-Fi/Inception%20(2010)/Inception.2010.en.srt",
+              "size": "118KB"
+            },
+            "Inception.2010.es.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Sci-Fi/Inception%20(2010)/Inception.2010.es.srt",
+              "size": "121KB"
+            }
+          }
+        },
+        "The Matrix (1999)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Sci-Fi/The%20Matrix%20(1999)/",
+          "children": {
+            "The.Matrix.1999.1080p.BluRay.x265.mkv": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Sci-Fi/The%20Matrix%20(1999)/The.Matrix.1999.1080p.BluRay.x265.mkv",
+              "size": "1.9GB"
+            },
+            "The.Matrix.1999.en.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Sci-Fi/The%20Matrix%20(1999)/The.Matrix.1999.en.srt",
+              "size": "89KB"
+            }
+          }
+        },
+        "Interstellar (2014)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Sci-Fi/Interstellar%20(2014)/",
+          "children": {
+            "Interstellar.2014.1080p.BluRay.x264.mkv": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Sci-Fi/Interstellar%20(2014)/Interstellar.2014.1080p.BluRay.x264.mkv",
+              "size": "3.2GB"
+            },
+            "Interstellar.2014.en.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Sci-Fi/Interstellar%20(2014)/Interstellar.2014.en.srt",
+              "size": "134KB"
+            }
+          }
+        }
+      }
+    },
+    "Horror": {
+      "type": "folder",
+      "url": "http://103.145.232.246/Data/movies/Horror/",
+      "children": {
+        "The Conjuring (2013)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Horror/The%20Conjuring%20(2013)/",
+          "children": {
+            "The.Conjuring.2013.1080p.BluRay.x264.mp4": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Horror/The%20Conjuring%20(2013)/The.Conjuring.2013.1080p.BluRay.x264.mp4",
+              "size": "1.9GB"
+            }
+          }
+        },
+        "Get Out (2017)": {
+          "type": "folder",
+          "url": "http://103.145.232.246/Data/movies/Horror/Get%20Out%20(2017)/",
+          "children": {
+            "Get.Out.2017.1080p.BluRay.x265.mkv": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Horror/Get%20Out%20(2017)/Get.Out.2017.1080p.BluRay.x265.mkv",
+              "size": "1.5GB"
+            },
+            "Get.Out.2017.en.srt": {
+              "type": "file",
+              "url": "http://103.145.232.246/Data/movies/Horror/Get%20Out%20(2017)/Get.Out.2017.en.srt",
+              "size": "82KB"
+            }
+          }
+        }
+      }
+    }
+  }
+}

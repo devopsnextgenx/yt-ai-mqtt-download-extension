@@ -1,0 +1,12 @@
+crawler:
+  base_url: http://103.145.232.246/Data/
+  max_retries: 3
+  max_threads: 10
+  parallel_enabled: true
+  timeout: 10
+logging:
+  level: INFO
+  log_dir: logs
+output:
+  html_file: content_browser.html
+  json_file: content_tree.json

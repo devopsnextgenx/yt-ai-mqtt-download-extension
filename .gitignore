@@ -2,3 +2,5 @@ audio.txt
 failed-msg.txt
 cookies.txt
 tmp/
+logs/
+.venv/
