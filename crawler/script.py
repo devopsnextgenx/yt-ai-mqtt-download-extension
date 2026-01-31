@@ -12,6 +12,7 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 import time
+import re
 
 # Setup logging
 def setup_logging(log_level='INFO'):
@@ -79,13 +80,11 @@ def load_config(config_file='config.yml'):
         
         with open(config_file, 'w') as f:
             yaml.dump(default_config, f, default_flow_style=False)
-        
         print(f"✨ Created default config file: {config_file}")
         return default_config
     
     with open(config_file, 'r') as f:
         config = yaml.safe_load(f)
-    
     return config
 
 class FolderCrawler:
@@ -101,7 +100,7 @@ class FolderCrawler:
         self.stats = {'folders': 0, 'files': 0, 'errors': 0}
         self.stats_lock = Lock()
         self.start_time = None
-        
+    
     def crawl(self, url, path=[]):
         """Entry point for crawling - chooses parallel or sequential"""
         self.start_time = time.time()
@@ -148,12 +147,13 @@ class FolderCrawler:
                 else:
                     # It's a file
                     self.stats['files'] += 1
-                    file_size = self._get_file_info(link)
-                    self.logger.debug(f"📄 Found file: {name} ({file_size or 'unknown size'})")
+                    file_info = self._get_file_info(link)
+                    self.logger.debug(f"📄 Found file: {name} ({file_info.get('size') or 'unknown size'}, {file_info.get('last_modified') or 'no date'})")
                     current_node['children'][name] = {
                         'type': 'file',
                         'url': full_url,
-                        'size': file_size
+                        'size': file_info.get('size'),
+                        'last_modified': file_info.get('last_modified')
                     }
             
             return current_node
@@ -221,12 +221,13 @@ class FolderCrawler:
                     # It's a file - process immediately
                     with self.stats_lock:
                         self.stats['files'] += 1
-                    file_size = self._get_file_info(link)
-                    self.logger.debug(f"📄 Found file: {name} ({file_size or 'unknown size'})")
+                    file_info = self._get_file_info(link)
+                    self.logger.debug(f"📄 Found file: {name} ({file_info.get('size') or 'unknown size'}, {file_info.get('last_modified') or 'no date'})")
                     files[name] = {
                         'type': 'file',
                         'url': full_url,
-                        'size': file_size
+                        'size': file_info.get('size'),
+                        'last_modified': file_info.get('last_modified')
                     }
             
             # Add files to current node
@@ -292,14 +293,41 @@ class FolderCrawler:
         }
     
     def _get_file_info(self, link):
-        """Extract file size if available"""
+        """Extract file size and last modified date if available"""
+        info = {'size': None, 'last_modified': None}
+        
+        # Get the text from the parent row (usually <tr> or <pre>)
         text = link.parent.get_text() if link.parent else ""
+        
         # Try to extract size from the listing
         parts = text.split()
         for i, part in enumerate(parts):
             if any(unit in part.upper() for unit in ['KB', 'MB', 'GB', 'TB']):
-                return part
-        return None
+                info['size'] = part
+                break
+        
+        # Try to extract date and time (common Apache/nginx format)
+        # Formats: "2024-01-15 14:30" or "15-Jan-2024 14:30" or "01/15/2024 02:30 PM"
+        try:
+            # Look for date patterns in the text
+            # Pattern 1: YYYY-MM-DD HH:MM or YYYY-MM-DD HH:MM:SS
+            date_pattern1 = r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?)'
+            # Pattern 2: DD-Mon-YYYY HH:MM
+            date_pattern2 = r'(\d{2}-[A-Za-z]{3}-\d{4}\s+\d{2}:\d{2})'
+            # Pattern 3: MM/DD/YYYY HH:MM AM/PM
+            date_pattern3 = r'(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}(?:\s+[AP]M)?)'
+            # Pattern 4: DD/MM/YYYY HH:MM
+            date_pattern4 = r'(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2})'
+            
+            for pattern in [date_pattern1, date_pattern2, date_pattern3, date_pattern4]:
+                match = re.search(pattern, text)
+                if match:
+                    info['last_modified'] = match.group(1).strip()
+                    break
+        except Exception as e:
+            self.logger.debug(f"Could not parse date from: {text[:100]}")
+        
+        return info
     
     def save_json(self, filename):
         """Save tree structure to JSON"""
@@ -322,7 +350,7 @@ class FolderCrawler:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Folder Browser</title>
+    <title>🎬 Movie Folder Browser</title>
     <style>
         * {
             margin: 0;
@@ -331,7 +359,7 @@ class FolderCrawler:
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -341,8 +369,8 @@ class FolderCrawler:
             max-width: 1200px;
             margin: 0 auto;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
         }
         
@@ -358,135 +386,208 @@ class FolderCrawler:
             margin-bottom: 10px;
         }
         
-        .search-box {
-            padding: 20px;
-            background: #f8f9fa;
-            border-bottom: 2px solid #e9ecef;
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
         }
         
-        .search-input {
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        
+        .search-box input {
             width: 100%;
-            padding: 15px;
-            font-size: 16px;
-            border: 2px solid #667eea;
-            border-radius: 5px;
-            outline: none;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
             transition: all 0.3s;
         }
         
-        .search-input:focus {
-            border-color: #764ba2;
-            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
-        .breadcrumb {
-            padding: 15px 20px;
-            background: #fff;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .breadcrumb-item {
-            color: #667eea;
-            text-decoration: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        
-        .breadcrumb-item:hover {
-            background: #f8f9fa;
-        }
-        
-        .breadcrumb-separator {
-            margin: 0 5px;
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
             color: #6c757d;
         }
         
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
         .content {
-            padding: 20px;
-            max-height: 600px;
-            overflow-y: auto;
+            padding: 30px;
+        }
+        
+        .tree {
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
         }
         
         .folder, .file {
-            padding: 12px 15px;
-            margin: 5px 0;
-            border-radius: 5px;
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .folder:hover, .file:hover {
             background: #f8f9fa;
-            transform: translateX(5px);
         }
         
         .folder {
-            background: #e7f3ff;
-            border-left: 4px solid #667eea;
+            font-weight: 600;
+            color: #495057;
         }
         
         .file {
-            background: #fff;
-            border-left: 4px solid #28a745;
+            color: #6c757d;
+        }
+        
+        .file-info {
+            margin-left: auto;
+            font-size: 0.85em;
+            color: #868e96;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .file-size {
+            min-width: 70px;
+            text-align: right;
+        }
+        
+        .file-date {
+            min-width: 130px;
+            text-align: right;
+        }
+        
+        .folder.collapsed > .children {
+            display: none;
+        }
+        
+        .children {
+            margin-left: 25px;
+            border-left: 2px solid #e9ecef;
+            padding-left: 10px;
         }
         
         .icon {
-            font-size: 1.5em;
-        }
-        
-        .name {
-            flex: 1;
-            font-weight: 500;
-        }
-        
-        .size {
-            color: #6c757d;
-            font-size: 0.9em;
-        }
-        
-        .no-results {
+            font-size: 1.2em;
+            width: 20px;
             text-align: center;
-            padding: 40px;
-            color: #6c757d;
         }
         
         .stats {
-            padding: 15px 20px;
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-            display: flex;
-            justify-content: space-around;
-            text-align: center;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
         
-        .stat-item {
-            flex: 1;
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
         }
         
         .stat-value {
-            font-size: 1.5em;
+            font-size: 2.5em;
             font-weight: bold;
-            color: #667eea;
+            margin-bottom: 5px;
         }
         
         .stat-label {
-            color: #6c757d;
+            opacity: 0.9;
             font-size: 0.9em;
         }
-
+        
         .loading {
             text-align: center;
-            padding: 40px;
-            color: #667eea;
+            padding: 60px;
+            color: #6c757d;
             font-size: 1.2em;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .breadcrumb {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.9em;
+        }
+        
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .search-box {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -497,202 +598,221 @@ class FolderCrawler:
             <p>Browse and search your movie collection</p>
         </div>
         
-        <div class="search-box">
-            <input type="text" class="search-input" id="searchInput" placeholder="Search for movies or folders...">
+        <div class="breadcrumb">
+            <span>📍</span>
+            <a href="#" id="homeBtn">🏠 Home</a>
         </div>
         
-        <div class="breadcrumb" id="breadcrumb">
-            <span class="breadcrumb-item" onclick="navigateTo([])">🏠 Home</span>
-        </div>
-        
-        <div class="content" id="content">
-            <div class="loading">Loading movie data...</div>
-        </div>
-        
-        <div class="stats" id="stats">
-            <div class="stat-item">
-                <div class="stat-value" id="folderCount">0</div>
-                <div class="stat-label">Folders</div>
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search for movies, folders...">
+                <span class="search-icon">🔍</span>
             </div>
-            <div class="stat-item">
-                <div class="stat-value" id="fileCount">0</div>
-                <div class="stat-label">Files</div>
+            <button class="btn btn-primary" id="expandAll">Expand All</button>
+            <button class="btn btn-primary" id="collapseAll">Collapse All</button>
+        </div>
+        
+        <div class="content">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="folderCount">0</div>
+                    <div class="stat-label">Folders</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="fileCount">0</div>
+                    <div class="stat-label">Files</div>
+                </div>
             </div>
+            
+            <div class="loading" id="loading">Loading movie data...</div>
+            <div id="treeContainer"></div>
         </div>
     </div>
     
     <script>
         let treeData = null;
-        let currentPath = [];
-        let allItems = [];
+        let stats = { folders: 0, files: 0 };
         
-        // Load JSON file
-        fetch('JSON_FILE_PLACEHOLDER')
-            .then(response => response.json())
-            .then(data => {
-                treeData = data;
-                initializeSearch();
-                navigateTo([]);
-            })
-            .catch(error => {
-                document.getElementById('content').innerHTML = 
-                    '<div class="no-results">Error loading movie data: ' + error.message + '</div>';
-            });
-        
-        function initializeSearch() {
-            allItems = [];
-            flattenTree(treeData, []);
+        // Load JSON data
+        async function loadData() {
+            try {
+                const response = await fetch('JSON_FILE_PLACEHOLDER');
+                treeData = await response.json();
+                document.getElementById('loading').style.display = 'none';
+                renderTree(treeData);
+                updateStats();
+            } catch (error) {
+                document.getElementById('loading').innerHTML = 
+                    `<div class="error">❌ Error loading data: ${error.message}</div>`;
+            }
         }
         
-        function flattenTree(node, path) {
-            if (node.children) {
-                for (const [name, child] of Object.entries(node.children)) {
-                    const itemPath = [...path, name];
-                    allItems.push({
-                        name: name,
-                        path: itemPath,
-                        type: child.type,
-                        url: child.url,
-                        size: child.size
-                    });
+        function renderTree(data, container = null, level = 0) {
+            if (!container) {
+                container = document.getElementById('treeContainer');
+                container.innerHTML = '';
+            }
+            
+            if (!data || !data.children) return;
+            
+            const entries = Object.entries(data.children).sort((a, b) => {
+                const aIsFolder = a[1].type === 'folder';
+                const bIsFolder = b[1].type === 'folder';
+                if (aIsFolder && !bIsFolder) return -1;
+                if (!aIsFolder && bIsFolder) return 1;
+                return a[0].localeCompare(b[0]);
+            });
+            
+            entries.forEach(([name, node]) => {
+                if (node.type === 'folder') {
+                    stats.folders++;
+                    const folderDiv = document.createElement('div');
+                    folderDiv.className = 'folder';
                     
-                    if (child.type === 'folder') {
-                        flattenTree(child, itemPath);
-                    }
-                }
-            }
-        }
-        
-        function navigateTo(path) {
-            currentPath = path;
-            renderBreadcrumb();
-            renderContent();
-        }
-        
-        function renderBreadcrumb() {
-            const breadcrumb = document.getElementById('breadcrumb');
-            let html = '<span class="breadcrumb-item" onclick="navigateTo([])">🏠 Home</span>';
-            
-            currentPath.forEach((item, index) => {
-                const partialPath = currentPath.slice(0, index + 1);
-                html += '<span class="breadcrumb-separator">›</span>';
-                html += `<span class="breadcrumb-item" onclick='navigateTo(${JSON.stringify(partialPath)})'>${item}</span>`;
-            });
-            
-            breadcrumb.innerHTML = html;
-        }
-        
-        function renderContent() {
-            const content = document.getElementById('content');
-            let node = treeData;
-            
-            for (const segment of currentPath) {
-                node = node.children[segment];
-            }
-            
-            if (!node || !node.children) {
-                content.innerHTML = '<div class="no-results">No items found</div>';
-                return;
-            }
-            
-            const items = Object.entries(node.children);
-            const folders = items.filter(([_, item]) => item.type === 'folder');
-            const files = items.filter(([_, item]) => item.type === 'file');
-            
-            let html = '';
-            
-            folders.forEach(([name, item]) => {
-                html += `
-                    <div class="folder" onclick='navigateTo(${JSON.stringify([...currentPath, name])})'>
+                    const folderHeader = document.createElement('div');
+                    folderHeader.style.display = 'flex';
+                    folderHeader.style.alignItems = 'center';
+                    folderHeader.style.gap = '8px';
+                    folderHeader.innerHTML = `
                         <span class="icon">📁</span>
-                        <span class="name">${name}</span>
-                    </div>
-                `;
+                        <span>${name}</span>
+                    `;
+                    
+                    const childrenDiv = document.createElement('div');
+                    childrenDiv.className = 'children';
+                    
+                    folderHeader.onclick = (e) => {
+                        e.stopPropagation();
+                        folderDiv.classList.toggle('collapsed');
+                        folderHeader.querySelector('.icon').textContent = 
+                            folderDiv.classList.contains('collapsed') ? '📁' : '📂';
+                    };
+                    
+                    folderDiv.appendChild(folderHeader);
+                    folderDiv.appendChild(childrenDiv);
+                    container.appendChild(folderDiv);
+                    
+                    renderTree(node, childrenDiv, level + 1);
+                } else {
+                    stats.files++;
+                    const fileDiv = document.createElement('div');
+                    fileDiv.className = 'file';
+                    
+                    const fileInfoHtml = `
+                        <div class="file-info">
+                            ${node.size ? `<span class="file-size">${node.size}</span>` : ''}
+                            ${node.last_modified ? `<span class="file-date">📅 ${node.last_modified}</span>` : ''}
+                        </div>
+                    `;
+                    
+                    fileDiv.innerHTML = `
+                        <span class="icon">📄</span>
+                        <span>${name}</span>
+                        ${fileInfoHtml}
+                    `;
+                    
+                    fileDiv.onclick = () => {
+                        window.open(node.url, '_blank');
+                    };
+                    
+                    container.appendChild(fileDiv);
+                }
             });
-            
-            files.forEach(([name, item]) => {
-                html += `
-                    <div class="file" onclick='window.open("${item.url}", "_blank")'>
-                        <span class="icon">🎬</span>
-                        <span class="name">${name}</span>
-                        ${item.size ? `<span class="size">${item.size}</span>` : ''}
-                    </div>
-                `;
-            });
-            
-            content.innerHTML = html || '<div class="no-results">No items found</div>';
-            updateStats();
         }
         
         function updateStats() {
-            let folderCount = 0;
-            let fileCount = 0;
+            document.getElementById('folderCount').textContent = stats.folders;
+            document.getElementById('fileCount').textContent = stats.files;
+        }
+        
+        function expandAll() {
+            document.querySelectorAll('.folder.collapsed').forEach(folder => {
+                folder.classList.remove('collapsed');
+                folder.querySelector('.icon').textContent = '📂';
+            });
+        }
+        
+        function collapseAll() {
+            document.querySelectorAll('.folder').forEach(folder => {
+                folder.classList.add('collapsed');
+                folder.querySelector('.icon').textContent = '📁';
+            });
+        }
+        
+        function search(query) {
+            stats = { folders: 0, files: 0 };
+            const container = document.getElementById('treeContainer');
             
-            function count(node) {
-                if (node.children) {
-                    for (const child of Object.values(node.children)) {
-                        if (child.type === 'folder') {
-                            folderCount++;
-                            count(child);
-                        } else {
-                            fileCount++;
-                        }
+            if (!query.trim()) {
+                renderTree(treeData);
+                updateStats();
+                return;
+            }
+            
+            container.innerHTML = '';
+            searchTree(treeData, query.toLowerCase(), container);
+            updateStats();
+        }
+        
+        function searchTree(data, query, container) {
+            if (!data || !data.children) return;
+            
+            Object.entries(data.children).forEach(([name, node]) => {
+                if (name.toLowerCase().includes(query)) {
+                    if (node.type === 'folder') {
+                        stats.folders++;
+                        const folderDiv = document.createElement('div');
+                        folderDiv.className = 'folder';
+                        folderDiv.innerHTML = `
+                            <span class="icon">📂</span>
+                            <span>${name}</span>
+                        `;
+                        container.appendChild(folderDiv);
+                    } else {
+                        stats.files++;
+                        const fileDiv = document.createElement('div');
+                        fileDiv.className = 'file';
+                        
+                        const fileInfoHtml = `
+                            <div class="file-info">
+                                ${node.size ? `<span class="file-size">${node.size}</span>` : ''}
+                                ${node.last_modified ? `<span class="file-date">📅 ${node.last_modified}</span>` : ''}
+                            </div>
+                        `;
+                        
+                        fileDiv.innerHTML = `
+                            <span class="icon">📄</span>
+                            <span>${name}</span>
+                            ${fileInfoHtml}
+                        `;
+                        fileDiv.onclick = () => window.open(node.url, '_blank');
+                        container.appendChild(fileDiv);
                     }
                 }
-            }
-            
-            count(treeData);
-            document.getElementById('folderCount').textContent = folderCount;
-            document.getElementById('fileCount').textContent = fileCount;
-        }
-        
-        function searchItems(query) {
-            if (!query) {
-                renderContent();
-                return;
-            }
-            
-            const content = document.getElementById('content');
-            const results = allItems.filter(item => 
-                item.name.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            if (results.length === 0) {
-                content.innerHTML = '<div class="no-results">No results found</div>';
-                return;
-            }
-            
-            let html = '';
-            results.forEach(item => {
-                const pathStr = item.path.join(' › ');
-                const icon = item.type === 'folder' ? '📁' : '🎬';
-                const className = item.type;
                 
-                if (item.type === 'folder') {
-                    html += `
-                        <div class="${className}" onclick='navigateTo(${JSON.stringify(item.path)})'>
-                            <span class="icon">${icon}</span>
-                            <span class="name">${item.name}</span>
-                            <span class="size" style="flex: 0 0 auto; max-width: 60%;">${pathStr}</span>
-                        </div>
-                    `;
-                } else {
-                    html += `
-                        <div class="${className}" onclick='window.open("${item.url}", "_blank")'>
-                            <span class="icon">${icon}</span>
-                            <span class="name">${item.name}</span>
-                            <span class="size" style="flex: 0 0 auto; max-width: 60%;">${pathStr}</span>
-                        </div>
-                    `;
+                if (node.type === 'folder') {
+                    searchTree(node, query, container);
                 }
             });
-            
-            content.innerHTML = html;
         }
         
+        // Event listeners
         document.getElementById('searchInput').addEventListener('input', (e) => {
-            searchItems(e.target.value);
+            search(e.target.value);
         });
+        
+        document.getElementById('expandAll').addEventListener('click', expandAll);
+        document.getElementById('collapseAll').addEventListener('click', collapseAll);
+        document.getElementById('homeBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            stats = { folders: 0, files: 0 };
+            renderTree(treeData);
+            updateStats();
+            document.getElementById('searchInput').value = '';
+        });
+        
+        // Load data on page load
+        loadData();
     </script>
 </body>
 </html>'''
@@ -702,6 +822,7 @@ class FolderCrawler:
             
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(html_content)
+            
             self.logger.info(f"✅ HTML viewer saved to {filename}")
             print(f"✅ HTML viewer saved to {filename}")
         except Exception as e:
@@ -748,10 +869,11 @@ def crawl_mode(config, logger, base_url=None, json_file=None, html_file=None):
     
     logger.info("💾 Saving results...")
     print("\n💾 Saving results...")
+    
     crawler.save_json(json_path)
     crawler.generate_html(html_path, json_path)
-    
     crawler.print_stats()
+    
     logger.info("✅ Crawl completed successfully!")
     print("\n✅ Crawl completed successfully!")
 
@@ -802,6 +924,7 @@ def browse_mode(config, logger, json_file=None, html_file=None, port=8000):
                 server_thread.start()
                 
                 url = f"http://localhost:{port}/{html_path}"
+                
                 logger.info(f"🚀 Starting local server on port {port}")
                 print(f"🚀 Local server running at http://localhost:{port}")
                 print(f"📄 Opening {html_path} in browser...")
@@ -819,8 +942,7 @@ def browse_mode(config, logger, json_file=None, html_file=None, port=8000):
                     logger.info("Server stopped by user")
                     print("\n👋 Server stopped")
                     httpd.shutdown()
-                    break
-                    
+                break
         except OSError as e:
             if "Address already in use" in str(e):
                 port += 1
@@ -860,16 +982,13 @@ Examples:
         '''
     )
     
-    parser.add_argument('mode', choices=['crawl', 'browse'], 
+    parser.add_argument('mode', choices=['crawl', 'browse'],
                        help='Mode: crawl (scrape website) or browse (open HTML viewer)')
     parser.add_argument('--config', default='config.yml',
                        help='Configuration file (default: config.yml)')
-    parser.add_argument('--url', 
-                       help='Base URL to crawl (overrides config)')
-    parser.add_argument('--json',
-                       help='JSON output/input file (overrides config)')
-    parser.add_argument('--html',
-                       help='HTML output file (overrides config)')
+    parser.add_argument('--url', help='Base URL to crawl (overrides config)')
+    parser.add_argument('--json', help='JSON output/input file (overrides config)')
+    parser.add_argument('--html', help='HTML output file (overrides config)')
     parser.add_argument('--threads', type=int,
                        help='Max number of parallel threads (overrides config)')
     parser.add_argument('--sequential', action='store_true',

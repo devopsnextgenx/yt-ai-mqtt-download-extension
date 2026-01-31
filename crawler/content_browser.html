@@ -59,6 +59,76 @@
             border-color: #764ba2;
             box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
         }
+
+        .date-filter-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .date-input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .date-input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #495057;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .date-input-group input {
+            padding: 10px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .active-filter-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
         
         .breadcrumb {
             padding: 15px 20px;
@@ -132,6 +202,45 @@
             color: #6c757d;
             font-size: 0.9em;
         }
+
+        .date-info {
+            color: #6c757d;
+            font-size: 0.85em;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .copy-btn {
+            padding: 5px 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s;
+            margin-left: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+            transform: scale(1.05);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        .copy-btn.copied {
+            background: #28a745;
+        }
+
+        .copy-icon {
+            font-size: 1em;
+        }
         
         .no-results {
             text-align: center;
@@ -180,6 +289,22 @@
         
         <div class="search-box">
             <input type="text" class="search-input" id="searchInput" placeholder="Search for movies or folders...">
+            
+            <div class="date-filter-container">
+                <div class="date-input-group">
+                    <label for="dateFrom">📅 From Date:</label>
+                    <input type="datetime-local" id="dateFrom" class="search-input">
+                </div>
+                <div class="date-input-group">
+                    <label for="dateTo">📅 To Date:</label>
+                    <input type="datetime-local" id="dateTo" class="search-input">
+                </div>
+                <div class="filter-buttons">
+                    <button id="applyDateFilter" class="btn btn-primary">Apply Filter</button>
+                    <button id="clearDateFilter" class="btn btn-secondary">Clear</button>
+                </div>
+            </div>
+            <div id="filterStatus" style="margin-top: 10px; font-size: 0.9em; color: #495057;"></div>
         </div>
         
         <div class="breadcrumb" id="breadcrumb">
@@ -199,6 +324,10 @@
                 <div class="stat-value" id="fileCount">0</div>
                 <div class="stat-label">Files</div>
             </div>
+            <div class="stat-item">
+                <div class="stat-value" id="filteredCount">0</div>
+                <div class="stat-label">Showing</div>
+            </div>
         </div>
     </div>
     
@@ -206,6 +335,11 @@
         let treeData = null;
         let currentPath = [];
         let allItems = [];
+        let dateFilter = {
+            from: null,
+            to: null,
+            active: false
+        };
         
         // Load JSON file
         fetch('content_tree.json')
@@ -234,7 +368,8 @@
                         path: itemPath,
                         type: child.type,
                         url: child.url,
-                        size: child.size
+                        size: child.size,
+                        last_modified: child.last_modified
                     });
                     
                     if (child.type === 'folder') {
@@ -242,6 +377,194 @@
                     }
                 }
             }
+        }
+        
+        
+        function copyToClipboard(url, event) {
+            // Stop event propagation to prevent opening the file
+            event.stopPropagation();
+            
+            // Try modern clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showCopySuccess(event.currentTarget);
+                }).catch(err => {
+                    console.error('Clipboard API failed:', err);
+                    // Fallback to older method
+                    fallbackCopyToClipboard(url, event.currentTarget);
+                });
+            } else {
+                // Use fallback for older browsers
+                fallbackCopyToClipboard(url, event.currentTarget);
+            }
+        }
+        
+        function fallbackCopyToClipboard(text, button) {
+            // Create a temporary textarea element
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.top = '0';
+            textarea.style.left = '0';
+            textarea.style.width = '2em';
+            textarea.style.height = '2em';
+            textarea.style.padding = '0';
+            textarea.style.border = 'none';
+            textarea.style.outline = 'none';
+            textarea.style.boxShadow = 'none';
+            textarea.style.background = 'transparent';
+            textarea.style.opacity = '0';
+            
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess(button);
+                } else {
+                    showCopyError(button, text);
+                }
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                showCopyError(button, text);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+        
+        function showCopySuccess(button) {
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<span class="copy-icon">✓</span> Copied!';
+            button.classList.add('copied');
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                button.classList.remove('copied');
+            }, 2000);
+        }
+        
+        function showCopyError(button, url) {
+            // Show prompt with URL for manual copy
+            const result = prompt('Unable to copy automatically. Please copy this URL manually:', url);
+            
+            // If user didn't cancel, show success message
+            if (result !== null) {
+                showCopySuccess(button);
+            }
+        }
+        
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            
+            // Try multiple date format patterns
+            const patterns = [
+                // YYYY-MM-DD HH:MM:SS or YYYY-MM-DD HH:MM
+                /(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?/,
+                // DD-Mon-YYYY HH:MM
+                /(\d{2})-([A-Za-z]{3})-(\d{4})\s+(\d{2}):(\d{2})/,
+                // MM/DD/YYYY HH:MM or MM/DD/YYYY HH:MM AM/PM
+                /(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})(?:\s+([AP]M))?/,
+                // DD/MM/YYYY HH:MM
+                /(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/
+            ];
+            
+            for (let pattern of patterns) {
+                const match = dateStr.match(pattern);
+                if (match) {
+                    try {
+                        // Handle different formats
+                        if (match[0].includes('-') && match[0].match(/^\d{4}/)) {
+                            // YYYY-MM-DD format
+                            return new Date(dateStr.replace(' ', 'T'));
+                        } else if (match[2] && isNaN(match[2])) {
+                            // DD-Mon-YYYY format
+                            const monthMap = {
+                                'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+                                'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+                            };
+                            return new Date(match[3], monthMap[match[2]], match[1], match[4], match[5]);
+                        } else {
+                            // Try generic parsing
+                            return new Date(dateStr);
+                        }
+                    } catch (e) {
+                        console.warn('Failed to parse date:', dateStr, e);
+                    }
+                }
+            }
+            
+            return null;
+        }
+        
+        function isDateInRange(itemDate, fromDate, toDate) {
+            const parsed = parseDate(itemDate);
+            if (!parsed) return true; // Include items without dates
+            
+            if (fromDate && parsed < fromDate) return false;
+            if (toDate && parsed > toDate) return false;
+            
+            return true;
+        }
+        
+        function applyDateFilter() {
+            const fromInput = document.getElementById('dateFrom').value;
+            const toInput = document.getElementById('dateTo').value;
+            
+            dateFilter.from = fromInput ? new Date(fromInput) : null;
+            dateFilter.to = toInput ? new Date(toInput) : null;
+            dateFilter.active = !!(dateFilter.from || dateFilter.to);
+            
+            updateFilterStatus();
+            
+            // Refresh the current view
+            const searchQuery = document.getElementById('searchInput').value;
+            if (searchQuery) {
+                searchItems(searchQuery);
+            } else {
+                renderContent();
+            }
+        }
+        
+        function clearDateFilter() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            dateFilter.from = null;
+            dateFilter.to = null;
+            dateFilter.active = false;
+            
+            updateFilterStatus();
+            
+            // Refresh the current view
+            const searchQuery = document.getElementById('searchInput').value;
+            if (searchQuery) {
+                searchItems(searchQuery);
+            } else {
+                renderContent();
+            }
+        }
+        
+        function updateFilterStatus() {
+            const status = document.getElementById('filterStatus');
+            if (dateFilter.active) {
+                let statusText = '🔍 Active filter: ';
+                if (dateFilter.from) {
+                    statusText += `From ${dateFilter.from.toLocaleString()} `;
+                }
+                if (dateFilter.to) {
+                    statusText += `To ${dateFilter.to.toLocaleString()}`;
+                }
+                status.innerHTML = `<span class="active-filter-badge">${statusText}</span>`;
+            } else {
+                status.innerHTML = '';
+            }
+        }
+        
+        function shouldIncludeItem(item) {
+            if (!dateFilter.active || item.type === 'folder') return true;
+            return isDateInRange(item.last_modified, dateFilter.from, dateFilter.to);
         }
         
         function navigateTo(path) {
@@ -263,6 +586,24 @@
             breadcrumb.innerHTML = html;
         }
         
+        function hasMatchingFiles(node) {
+            // Recursively check if a folder or any of its subfolders contain files matching the filter
+            if (!node || !node.children) return false;
+            
+            for (const child of Object.values(node.children)) {
+                if (child.type === 'file') {
+                    if (isDateInRange(child.last_modified, dateFilter.from, dateFilter.to)) {
+                        return true;
+                    }
+                } else if (child.type === 'folder') {
+                    if (hasMatchingFiles(child)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
         function renderContent() {
             const content = document.getElementById('content');
             let node = treeData;
@@ -273,16 +614,28 @@
             
             if (!node || !node.children) {
                 content.innerHTML = '<div class="no-results">No items found</div>';
+                updateStatsDisplay(0, 0, 0);
                 return;
             }
             
             const items = Object.entries(node.children);
-            const folders = items.filter(([_, item]) => item.type === 'folder');
-            const files = items.filter(([_, item]) => item.type === 'file');
+            let folders = items.filter(([_, item]) => item.type === 'folder');
+            let files = items.filter(([_, item]) => item.type === 'file');
+            
+            // Apply date filter to files
+            if (dateFilter.active) {
+                files = files.filter(([_, item]) => isDateInRange(item.last_modified, dateFilter.from, dateFilter.to));
+                
+                // Filter folders to only show those with matching files
+                folders = folders.filter(([_, item]) => hasMatchingFiles(item));
+            }
             
             let html = '';
+            let displayedFolders = 0;
+            let displayedFiles = 0;
             
             folders.forEach(([name, item]) => {
+                displayedFolders++;
                 html += `
                     <div class="folder" onclick='navigateTo(${JSON.stringify([...currentPath, name])})'>
                         <span class="icon">📁</span>
@@ -292,39 +645,77 @@
             });
             
             files.forEach(([name, item]) => {
+                displayedFiles++;
+                const dateInfo = item.last_modified ? `<span class="date-info">📅 ${item.last_modified}</span>` : '';
                 html += `
                     <div class="file" onclick='window.open("${item.url}", "_blank")'>
                         <span class="icon">🎬</span>
                         <span class="name">${name}</span>
                         ${item.size ? `<span class="size">${item.size}</span>` : ''}
+                        ${dateInfo}
+                        <button class="copy-btn" onclick='copyToClipboard("${item.url.replace(/'/g, "\\'")}", event)'>
+                            <span class="copy-icon">📋</span> Copy
+                        </button>
                     </div>
                 `;
             });
             
-            content.innerHTML = html || '<div class="no-results">No items found</div>';
+            if (!html) {
+                content.innerHTML = '<div class="no-results">No items found matching the filter criteria</div>';
+            } else {
+                content.innerHTML = html;
+            }
+            
             updateStats();
         }
         
         function updateStats() {
-            let folderCount = 0;
-            let fileCount = 0;
+            let totalFolderCount = 0;
+            let totalFileCount = 0;
+            let visibleFileCount = 0;
             
-            function count(node) {
+            function countAll(node) {
                 if (node.children) {
                     for (const child of Object.values(node.children)) {
                         if (child.type === 'folder') {
-                            folderCount++;
-                            count(child);
+                            totalFolderCount++;
+                            countAll(child);
                         } else {
-                            fileCount++;
+                            totalFileCount++;
                         }
                     }
                 }
             }
             
-            count(treeData);
-            document.getElementById('folderCount').textContent = folderCount;
-            document.getElementById('fileCount').textContent = fileCount;
+            function countVisible(node) {
+                if (node.children) {
+                    for (const child of Object.values(node.children)) {
+                        if (child.type === 'file') {
+                            if (isDateInRange(child.last_modified, dateFilter.from, dateFilter.to)) {
+                                visibleFileCount++;
+                            }
+                        } else if (child.type === 'folder') {
+                            countVisible(child);
+                        }
+                    }
+                }
+            }
+            
+            countAll(treeData);
+            
+            if (dateFilter.active) {
+                countVisible(treeData);
+            } else {
+                visibleFileCount = totalFileCount;
+            }
+            
+            updateStatsDisplay(totalFolderCount, totalFileCount, visibleFileCount);
+        }
+        
+        function updateStatsDisplay(folders, files, filtered) {
+            document.getElementById('folderCount').textContent = folders;
+            document.getElementById('fileCount').textContent = files;
+            document.getElementById('filteredCount').textContent = filtered;
         }
         
         function searchItems(query) {
@@ -334,45 +725,86 @@
             }
             
             const content = document.getElementById('content');
-            const results = allItems.filter(item => 
+            let results = allItems.filter(item => 
                 item.name.toLowerCase().includes(query.toLowerCase())
             );
             
+            // Apply date filter to search results
+            if (dateFilter.active) {
+                // For files, filter by date
+                results = results.filter(item => {
+                    if (item.type === 'file') {
+                        return isDateInRange(item.last_modified, dateFilter.from, dateFilter.to);
+                    } else {
+                        // For folders, check if they contain matching files
+                        let node = treeData;
+                        for (const segment of item.path) {
+                            node = node.children[segment];
+                        }
+                        return hasMatchingFiles(node);
+                    }
+                });
+            }
+            
             if (results.length === 0) {
                 content.innerHTML = '<div class="no-results">No results found</div>';
+                updateStatsDisplay(0, 0, 0);
                 return;
             }
             
             let html = '';
+            let folderCount = 0;
+            let fileCount = 0;
+            
             results.forEach(item => {
                 const pathStr = item.path.join(' › ');
                 const icon = item.type === 'folder' ? '📁' : '🎬';
                 const className = item.type;
                 
                 if (item.type === 'folder') {
+                    folderCount++;
                     html += `
                         <div class="${className}" onclick='navigateTo(${JSON.stringify(item.path)})'>
                             <span class="icon">${icon}</span>
                             <span class="name">${item.name}</span>
-                            <span class="size" style="flex: 0 0 auto; max-width: 60%;">${pathStr}</span>
+                            <span class="size" style="flex: 0 0 auto; max-width: 50%;">${pathStr}</span>
                         </div>
                     `;
                 } else {
+                    fileCount++;
+                    const dateInfo = item.last_modified ? `<span class="date-info">📅 ${item.last_modified}</span>` : '';
                     html += `
                         <div class="${className}" onclick='window.open("${item.url}", "_blank")'>
                             <span class="icon">${icon}</span>
                             <span class="name">${item.name}</span>
-                            <span class="size" style="flex: 0 0 auto; max-width: 60%;">${pathStr}</span>
+                            <span class="size" style="flex: 0 0 auto; max-width: 40%;">${pathStr}</span>
+                            ${dateInfo}
+                            <button class="copy-btn" onclick='copyToClipboard("${item.url.replace(/'/g, "\\'")}", event)'>
+                                <span class="copy-icon">📋</span> Copy
+                            </button>
                         </div>
                     `;
                 }
             });
             
             content.innerHTML = html;
+            updateStatsDisplay(folderCount, fileCount, fileCount);
         }
         
+        // Event listeners
         document.getElementById('searchInput').addEventListener('input', (e) => {
             searchItems(e.target.value);
+        });
+        
+        document.getElementById('applyDateFilter').addEventListener('click', applyDateFilter);
+        document.getElementById('clearDateFilter').addEventListener('click', clearDateFilter);
+        
+        // Allow Enter key to apply filter
+        document.getElementById('dateFrom').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyDateFilter();
+        });
+        document.getElementById('dateTo').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyDateFilter();
         });
     </script>
 </body>
